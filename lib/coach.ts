@@ -4,6 +4,11 @@
 import { cfg } from "./config";
 import { addDays, fmtDuration, fmtTime, localTime, ymd } from "./time";
 import { sleepNeedMin } from "./scoring";
+import { travelFor } from "./travel";
+
+export function localHour(d: Date): number {
+  return Number(new Intl.DateTimeFormat("en-AU", { timeZone: cfg.tz, hour: "numeric", hourCycle: "h23" }).format(d));
+}
 import type { Coach, HealthData, TimelineItem } from "./types";
 
 export function buildCoach(
@@ -53,13 +58,15 @@ export function buildCoach(
 
   // Tonight's bedtime: work back from tomorrow's first commitment.
   const needTonight = sleepNeedMin(h.strain.score, cfg.body.baseSleepNeedMin);
-  const tomorrowDay = addDays(ymd(now), 1);
-  const first = timeline.tomorrow.find((e) => !e.allDay);
-  let wake = localTime(tomorrowDay, cfg.body.defaultWake);
-  let reason = `your usual ${cfg.body.defaultWake} wake`;
+  // After midnight, "tonight" is really this morning.
+  const smallHours = localHour(now) < 4;
+  const wakeDay = smallHours ? ymd(now) : addDays(ymd(now), 1);
+  const first = (smallHours ? timeline.today : timeline.tomorrow).find((e) => !e.allDay && Date.parse(e.start) > +now);
+  let wake = localTime(wakeDay, cfg.body.defaultWake);
+  let reason = "your usual wake time";
   if (first) {
-    const travel = first.source === "tanda" ? 60 : 75; // commute + getting ready, minutes
-    const byFirst = new Date(Date.parse(first.start) - travel * 60e3);
+    const lead = travelFor(first) + cfg.travel.readyMin;
+    const byFirst = new Date(Date.parse(first.start) - lead * 60e3);
     if (byFirst < wake) {
       wake = byFirst;
       reason = `${first.title} at ${fmtTime(first.start)}`;

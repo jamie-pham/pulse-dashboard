@@ -101,6 +101,77 @@ export interface Coach {
   tonight: { bedtime: string; wakeAt: string; needMin: number; reason: string } | null;
 }
 
+export interface WeatherHour {
+  time: string; // ISO
+  temp: number;
+  feels: number;
+  code: number;
+  pop: number; // % chance of precipitation
+  uv: number;
+  isDay: boolean;
+}
+
+export interface WeatherDay {
+  date: string;
+  code: number;
+  max: number;
+  min: number;
+  pop: number;
+  rainMm: number;
+  uvMax: number;
+  sunrise: string;
+  sunset: string;
+}
+
+export interface Advice {
+  icon: string;
+  text: string;
+  say?: string;
+}
+
+export interface WeatherData {
+  place: string;
+  now: { temp: number; feels: number; code: number; isDay: boolean; wind: number; gust: number; humidity: number };
+  hours: WeatherHour[]; // next ~16 hours
+  today: WeatherDay;
+  tomorrow: WeatherDay | null;
+  aqi: number | null;
+  advice: Advice[];
+  /** Forecast at campus for your first class today, if there is one. */
+  campus?: { label: string; at: string; temp: number; code: number; pop: number } | null;
+}
+
+export interface EmergencyAlert {
+  id: string;
+  kind: "warning" | "incident";
+  title: string;
+  detail: string;
+  status: string;
+  distanceKm: number;
+  updated: string;
+  url: string;
+}
+
+export interface BriefLine {
+  icon: string;
+  text: string;
+  say?: string; // how it should sound when read aloud, if different
+  spokenOnly?: boolean; // e.g. current conditions — already shown big in the weather hero
+}
+
+export interface Brief {
+  phase: "morning" | "day" | "evening" | "night";
+  title: string;
+  lines: BriefLine[];
+  spoken: string;
+}
+
+export interface Countdown {
+  label: string;
+  date: string;
+  days: number;
+}
+
 export interface DashboardData {
   generatedAt: string;
   demo: boolean;
@@ -114,4 +185,10 @@ export interface DashboardData {
   ed: EdData | null;
   sources: SourceStatus[];
   google: { connected: boolean; refreshExpiresAt: string | null };
+  weather: WeatherData | null;
+  alerts: EmergencyAlert[];
+  countdowns: Countdown[];
+  routine: { items: string[]; done: string[] };
+  brief: Brief;
+  usingPhoneLocation: boolean;
 }

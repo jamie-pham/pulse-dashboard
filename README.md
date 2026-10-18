@@ -1,6 +1,8 @@
 # Pulse
 
-A personal dashboard for one person: recovery, strain and sleep from a Fitbit Air, plus today's calendar, Tanda shifts, Monash classes and deadlines, Gmail, Notion and GitHub. It's a Next.js web app you install on your iPhone home screen.
+A personal dashboard for one person: recovery, strain and sleep from a Fitbit Air, plus weather, today's calendar, Tanda shifts, Monash classes and deadlines, Gmail, Notion and GitHub. It's a Next.js web app you install on your iPhone home screen.
+
+At the top is a **brief** that changes with the time of day. In the morning it covers the weather, what to take, recovery, your first commitment with a "leave by" time, what's due, and anything near you on VicEmergency. In the evening it covers your bedtime, tomorrow's weather and your first thing tomorrow. Tap **Read it to me** to hear it, or have your iPhone read it out when you stop your alarm (see section 6).
 
 ```
 npm install
@@ -71,6 +73,29 @@ Ed and OnTrack don't offer public student APIs, so these cards use **your own to
 
 ---
 
+## 6. Wake-up brief: your iPhone reads it out when you stop your alarm
+
+1. Set `BRIEF_TOKEN` in Vercel to a long random string (`openssl rand -hex 24`) and redeploy.
+2. In the **Shortcuts** app, open **Shortcuts → +** and name it **Morning brief**. Add these actions:
+   1. **Get Contents of URL**: `https://YOUR-APP.vercel.app/api/brief?format=text&fresh=1`. Tap **Show More → Headers → Add new header**: key `Authorization`, value `Bearer YOUR_BRIEF_TOKEN`.
+   2. **Speak Text**: Contents of URL. Pick an Australian voice if you like.
+   3. **Open URLs**: `https://YOUR-APP.vercel.app/?wake=1`
+3. Open **Automation → + → Alarm**, choose **Is Stopped** and **Wake-Up** (or *Any alarm*), then **Run Immediately** → **Morning brief**.
+
+Stop the alarm and your phone tells you the weather, whether to take an umbrella, your recovery, when to leave for your first class or shift, and what's due. Then it opens the full dashboard.
+
+- **Weather where you actually are:** add **Get Current Location** before step 1, then add `&lat=` *Latitude* `&lon=` *Longitude* to the URL. Pulse saves your location, rounded to about 1 km. You can also tap **📍 use my location** in the app.
+- **Open URLs opens Safari**, which keeps its own login separate from the home-screen app, so log in once there too. The login lasts 90 days.
+- **Bedtime version:** make a second automation, **Sleep → Wind Down begins** (or a time like 9:30pm), running the same shortcut. After 5pm the brief switches to tonight's bedtime and tomorrow's plan.
+- **Preview without waiting:** in demo mode, open `/?at=07:05` or `/?at=20:30`.
+
+## Weather and alerts
+
+- **Weather** comes from [Open-Meteo](https://open-meteo.com/). It's free, needs no key, and uses the Bureau of Meteorology's model in its blend. You get current conditions, a 14-hour strip, highs and lows, sunset and air quality, plus plain-English advice: umbrella (≥ 50% rain), jacket (feels ≤ 10°), layers (≥ 10° swing), sunscreen (UV ≥ 3, the Cancer Council threshold), heat, wind and smoke.
+- If you have a class today, the brief also gives the **campus forecast** for your first class.
+- **Near you:** active incidents within `ALERT_RADIUS_KM` (default 15 km) and warnings within 45 km, from VicEmergency's public feed. Incidents that are safe or under control, and planned burns, are filtered out.
+- **Morning routine:** a tick-list from `MORNING_ROUTINE` that resets each day. **Countdowns** come from `COUNTDOWNS`, e.g. exams or the Security+ exam.
+
 ## How the scores work
 
 These are Pulse's own models, built from published methods. They are **not** Whoop's or Fitbit's proprietary algorithms. The full logic is about 100 lines in `lib/scoring.ts`.
@@ -100,12 +125,17 @@ lib/sources/health.ts     Google Health API → HRV, RHR, sleep, minute HR, step
 lib/sources/*.ts          calendar, gmail, tanda, ics (moodle/timetable), ed, ontrack, notion, github
 lib/scoring.ts            recovery + strain + sleep need (pure, tested)
 lib/coach.ts              plain-English advice + tonight's bedtime
+lib/brief.ts              the time-aware brief (morning / day / evening / night) + spoken version
+lib/sources/weather.ts    Open-Meteo forecast + air quality;  lib/weather-advice.ts = what to take
+lib/sources/alerts.ts     VicEmergency incidents/warnings near you
+app/api/brief             brief as text/JSON for the iOS Shortcut (Bearer BRIEF_TOKEN)
 lib/dashboard.ts          runs every source in parallel with per-source caching
 ```
 
 Data is cached for 3–30 minutes per source. The refresh button bypasses the cache, and the app auto-refreshes when you reopen it after 5+ minutes. Finished days' strain is cached permanently, so history loads fast.
 
 ## Ideas for v2
-- Push notifications (iOS 16.4+ supports them for home-screen web apps), e.g. a morning recovery summary or "leave for your shift in 30 min".
+- Push notifications (iOS 16.4+ supports them for home-screen web apps), e.g. "leave for your shift in 30 min".
+- Live traffic or PTV departures for "leave by" times, which currently use fixed minutes from `TRAVEL_*`.
 - Google Health webhooks, so new sleep data arrives the moment it syncs.
 - Hevy and MyFitnessPal cards.

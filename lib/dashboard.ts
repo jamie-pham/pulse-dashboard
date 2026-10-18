@@ -13,12 +13,19 @@ import { getEd, getOnTrack } from "./sources/uni";
 import { getGitHub, getNotionTasks } from "./sources/work";
 import { buildCoach } from "./coach";
 import { demoData } from "./demo";
+import { buildBrief } from "./brief";
+import { getCountdowns, getRoutine } from "./extras";
+import { getLocation } from "./location";
+import { isCampus } from "./travel";
+import { getWeather } from "./sources/weather";
+import { getAlerts } from "./sources/alerts";
 import type { DashboardData, DueItem, SourceStatus, TimelineItem } from "./types";
 
 const TTL = { health: 300, cal: 300, inbox: 180, tanda: 1800, ics: 1800, ed: 900, ontrack: 1800, notion: 600, gh: 600 };
 
-export async function buildDashboard(force = false): Promise<DashboardData> {
-  if (cfg.demo) return demoData();
+/** `at` (HH:MM) only works in demo mode — handy for previewing the morning/evening brief. */
+export async function buildDashboard(force = false, at?: string): Promise<DashboardData> {
+  if (cfg.demo) return demoData(at && /^\d{2}:\d{2}$/.test(at) ? localTime(ymd(), at) : new Date());
 
   const now = new Date();
   const today = ymd(now);
@@ -73,11 +80,22 @@ export async function buildDashboard(force = false): Promise<DashboardData> {
 
   const timeline = { today: events.filter(onDay(today)), tomorrow: events.filter(onDay(tomorrow)) };
 
+  // Weather + nearby emergencies for wherever you are (phone location if you've shared it, else HOME_LAT/LON).
+  const loc = await getLocation();
+  const firstCampus = timeline.today.find((e) => !e.allDay && isCampus(e) && Date.parse(e.start) > +now);
+  const [weather, alerts, routine] = await Promise.all([
+    run(`wx:${loc.lat},${loc.lon}:${firstCampus?.start ?? ""}`, "Weather", 900, () =>
+      getWeather(loc.lat, loc.lon, loc.label, firstCampus?.start),
+    ),
+    run(`alerts:${loc.lat},${loc.lon}`, "VicEmergency", 300, () => getAlerts(loc.lat, loc.lon)),
+    getRoutine(today),
+  ]);
+
   // Keep the sources list in a stable order for the settings strip.
-  const order = ["health", "cal", "inbox", "tanda", "tt", "moodle", "ed", "ontrack", "notion", "github"];
+  const order = ["wx", "alerts", "health", "cal", "inbox", "tanda", "tt", "moodle", "ed", "ontrack", "notion", "github"];
   sources.sort((a, b) => order.indexOf(a.key.split(":")[0]) - order.indexOf(b.key.split(":")[0]));
 
-  return {
+  const base = {
     generatedAt: now.toISOString(),
     demo: false,
     today,
@@ -90,6 +108,12 @@ export async function buildDashboard(force = false): Promise<DashboardData> {
     ed: ed?.ed ?? null,
     sources,
     google: { connected: google.connected, refreshExpiresAt: google.refreshExpiresAt },
+    weather,
+    alerts: alerts ?? [],
+    countdowns: getCountdowns(now),
+    routine,
+    usingPhoneLocation: loc.phone,
   };
+  return { ...base, brief: buildBrief(base, now) };
 }
 

@@ -8,6 +8,8 @@ import { fmtDay } from "@/lib/time";
 import { CoachCard, Rings, SleepCard, StrainCard } from "./components/Health";
 import { DevCard, DueCard, EdCard, InboxCard, SourcesStrip, Timeline } from "./components/Life";
 import RefreshButton from "./components/RefreshButton";
+import Routine from "./components/Routine";
+import { AlertsCard, BriefCard, CountdownCard } from "./components/Brief";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +51,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   }
 
   const params = await searchParams;
-  const data = await buildDashboard();
+  // ?wake=1 comes from the alarm Shortcut: skip the cache so last night's sleep is as fresh as possible.
+  const data = await buildDashboard(params.wake === "1", params.at);
   const now = new Date(data.generatedAt);
   const h = data.health;
   const needsGoogle = !data.demo && googleConfigured() && !data.google.connected;
@@ -80,16 +83,24 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         <div className="banner">Add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> to pull in Fitbit, Calendar and Gmail.</div>
       )}
 
+      <BriefCard brief={data.brief} weather={data.weather} usingPhone={data.usingPhoneLocation} now={data.generatedAt} />
+      <AlertsCard alerts={data.alerts} />
+
       <div className="grid">
         <div className="col">
           {h && <Rings h={h} />}
           {data.coach && <CoachCard coach={data.coach} band={h?.recovery.band ?? null} />}
+          {data.brief.phase === "morning" && <Routine items={data.routine.items} done={data.routine.done} />}
           <Timeline today={data.timeline.today} tomorrow={data.timeline.tomorrow} now={data.generatedAt} />
           <DueCard due={data.due} now={data.generatedAt} />
         </div>
         <div className="col">
           {h && <SleepCard h={h} />}
           {h && <StrainCard h={h} />}
+          <CountdownCard countdowns={data.countdowns} />
+          {data.brief.phase === "day" && data.routine.done.length < data.routine.items.length && (
+            <Routine items={data.routine.items} done={data.routine.done} />
+          )}
           {data.inbox && <InboxCard inbox={data.inbox} />}
           {data.ed && <EdCard ed={data.ed} />}
           {data.dev && <DevCard dev={data.dev} />}

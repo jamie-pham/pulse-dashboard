@@ -1,14 +1,16 @@
 // Realistic fake data so you can see the whole dashboard before connecting anything (DEMO_MODE=1).
 
 import { buildCoach } from "./coach";
+import { buildBrief } from "./brief";
+import { weatherAdvice } from "./weather-advice";
+import { cfg } from "./config";
 import { addDays, localTime, ymd } from "./time";
 import { recoveryScore, sleepPerformance, trimp, strainFromTrimp } from "./scoring";
-import type { DashboardData, HealthData, TimelineItem } from "./types";
+import type { DashboardData, HealthData, TimelineItem, WeatherData, WeatherHour } from "./types";
 
 const at = (day: string, hhmm: string) => localTime(day, hhmm).toISOString();
 
-export function demoData(): DashboardData {
-  const now = new Date();
+export function demoData(now = new Date()): DashboardData {
   const today = ymd(now);
   const tomorrow = addDays(today, 1);
   const yesterday = addDays(today, -1);
@@ -84,7 +86,39 @@ export function demoData(): DashboardData {
   };
 
   const due = (d: number, hhmm: string) => at(addDays(today, d), hhmm);
-  return {
+
+  // A typical Melbourne spring day: cool start, showers mid-afternoon, high UV around lunch.
+  const curve = [9, 9, 10, 11, 13, 15, 16, 17, 18, 19, 18, 17, 15, 14, 13, 12, 12, 11, 11, 10, 10, 9, 9, 9];
+  const startHour = Number(new Intl.DateTimeFormat("en-AU", { timeZone: cfg.tz, hour: "numeric", hourCycle: "h23" }).format(now));
+  const hours: WeatherHour[] = Array.from({ length: 16 }, (_, i) => {
+    const hh = (startHour + i) % 24;
+    const day = startHour + i >= 24 ? tomorrow : today;
+    const temp = curve[(hh + 18) % 24];
+    const pop = hh >= 14 && hh <= 17 ? [55, 70, 60, 35][hh - 14] : hh === 13 ? 25 : 5;
+    return {
+      time: at(day, `${String(hh).padStart(2, "0")}:00`),
+      temp,
+      feels: temp - 2,
+      code: pop >= 50 ? 80 : hh >= 6 && hh <= 19 ? 2 : 1,
+      pop,
+      uv: hh >= 8 && hh <= 17 ? Math.round(7 * Math.sin(((hh - 7) / 11) * Math.PI) * 10) / 10 : 0,
+      isDay: hh >= 6 && hh <= 19,
+    };
+  });
+  const wToday = { date: today, code: 80, max: 19, min: 9, pop: 70, rainMm: 3.4, uvMax: 7, sunrise: at(today, "06:28"), sunset: at(today, "19:41") };
+  const nowWx = { temp: hours[0].temp, feels: hours[0].feels, code: hours[0].code, isDay: hours[0].isDay, wind: 14, gust: 31, humidity: 72 };
+  const weather: WeatherData = {
+    place: "Home",
+    now: nowWx,
+    hours,
+    today: wToday,
+    tomorrow: { date: tomorrow, code: 3, max: 17, min: 8, pop: 20, rainMm: 0, uvMax: 6, sunrise: at(tomorrow, "06:27"), sunset: at(tomorrow, "19:42") },
+    aqi: 22,
+    campus: { label: "Clayton", at: at(today, "10:00"), temp: 14, code: 2, pop: 10 },
+    advice: weatherAdvice({ now: nowWx, hours: hours.slice(0, 14), today: wToday, aqi: 22 }),
+  };
+
+  const base: Omit<DashboardData, "brief"> = {
     generatedAt: now.toISOString(),
     demo: true,
     today,
@@ -121,6 +155,8 @@ export function demoData(): DashboardData {
       ],
     },
     sources: [
+      { key: "wx", label: "Weather", state: "ok" },
+      { key: "alerts", label: "VicEmergency", state: "ok" },
       { key: "health", label: "Fitbit Air", state: "ok" },
       { key: "cal", label: "Google Calendar", state: "ok" },
       { key: "inbox", label: "Gmail", state: "ok" },
@@ -133,5 +169,25 @@ export function demoData(): DashboardData {
       { key: "github", label: "GitHub", state: "ok" },
     ],
     google: { connected: true, refreshExpiresAt: new Date(+now + 4 * 86400e3).toISOString() },
+    weather,
+    alerts: [
+      {
+        id: "demo-alert",
+        kind: "incident",
+        title: "Tree down",
+        detail: "Leakes Rd, Truganina",
+        status: "Responding",
+        distanceKm: 3.8,
+        updated: now.toISOString(),
+        url: "https://emergency.vic.gov.au/respond/",
+      },
+    ],
+    countdowns: [
+      { label: "Exams start", date: addDays(today, 12), days: 12 },
+      { label: "Security+ exam", date: addDays(today, 41), days: 41 },
+    ],
+    routine: { items: cfg.routine, done: [cfg.routine[0]] },
+    usingPhoneLocation: false,
   };
+  return { ...base, brief: buildBrief(base, now) };
 }
