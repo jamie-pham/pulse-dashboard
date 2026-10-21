@@ -2,22 +2,15 @@
 //   GET /api/brief?format=text   Authorization: Bearer <BRIEF_TOKEN>
 // Optional ?lat=&lon= (Shortcuts "Get Current Location") updates where weather is checked.
 
-import { createHash, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { cfg } from "@/lib/config";
 import { buildDashboard } from "@/lib/dashboard";
 import { setLocation, validCoords } from "@/lib/location";
 import { isAuthed } from "@/lib/session";
+import { tokenOk } from "@/lib/token";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
-
-function tokenOk(req: Request): boolean {
-  if (!cfg.briefToken) return false;
-  const got = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-  const h = (s: string) => createHash("sha256").update(s).digest();
-  return got.length > 0 && timingSafeEqual(h(got), h(cfg.briefToken));
-}
 
 export async function GET(req: Request) {
   if (!tokenOk(req) && !(await isAuthed())) {

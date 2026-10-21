@@ -6,7 +6,7 @@
 
 import { cfg } from "./config";
 import { fmtTime, ymd } from "./time";
-import { travelFor } from "./travel";
+import { travelFrom } from "./travel";
 import type { PushNote } from "./push";
 import type { DashboardData } from "./types";
 
@@ -47,7 +47,7 @@ export function urgentNotes(d: Pick<DashboardData, "timeline" | "due" | "alerts"
   // 1) Leave-by for anything you have to travel to.
   for (const e of d.timeline.today) {
     if (e.allDay) continue;
-    const travel = travelFor(e) * 60e3;
+    const travel = travelFrom(e, d.timeline.today) * 60e3;
     if (!travel) continue;
     const start = Date.parse(e.start);
     const leaveAt = start - travel;

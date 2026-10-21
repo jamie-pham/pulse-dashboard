@@ -16,3 +16,20 @@ export function travelFor(e: TimelineItem): number {
 }
 
 export const isCampus = (e: TimelineItem) => e.source === "timetable" || CAMPUS.test(`${e.location ?? ""} ${e.title}`);
+
+/**
+ * Travel time for an event given the rest of the day: 0 if you'll already be there — the previous event was
+ * on campus and ended within 4 hours (you stay between classes), or it was at the same place.
+ */
+export function travelFrom(e: TimelineItem, day: TimelineItem[]): number {
+  const mins = travelFor(e);
+  if (!mins) return 0;
+  const start = Date.parse(e.start);
+  const prev = day
+    .filter((x) => !x.allDay && x.id !== e.id && Date.parse(x.end) <= start && start - Date.parse(x.end) <= 4 * 3600e3)
+    .sort((a, b) => Date.parse(b.end) - Date.parse(a.end))[0];
+  if (!prev) return mins;
+  if (isCampus(e) && isCampus(prev)) return 0;
+  if (e.location && prev.location && e.location.trim().toLowerCase() === prev.location.trim().toLowerCase()) return 0;
+  return mins;
+}

@@ -4,7 +4,7 @@
 import { cfg } from "./config";
 import { localHour } from "./coach";
 import { addDays, fmtTime, ymd } from "./time";
-import { travelFor } from "./travel";
+import { travelFrom } from "./travel";
 import { spanLabel } from "./workload";
 import { wmo } from "./weather-advice";
 import type { Brief, BriefLine, DashboardData, TimelineItem } from "./types";
@@ -44,17 +44,17 @@ export function forSpeech(s: string): string {
     .trim();
 }
 
-function leaveBy(e: TimelineItem, now: Date): { text: string; at: Date } | null {
-  const mins = travelFor(e);
+function leaveBy(e: TimelineItem, now: Date, day: TimelineItem[] = []): { text: string; at: Date } | null {
+  const mins = travelFrom(e, day);
   if (!mins) return null;
   const at = new Date(Date.parse(e.start) - mins * 60e3);
   if (Date.parse(e.start) <= +now) return null;
   return { at, text: at <= now ? "leave now" : `leave by ${t(at)}` };
 }
 
-function eventLine(label: string, e: TimelineItem, now: Date): BriefLine {
+function eventLine(label: string, e: TimelineItem, now: Date, day: TimelineItem[] = []): BriefLine {
   const where = e.source === "timetable" ? cfg.campus.label : e.location?.split(",")[0];
-  const lb = leaveBy(e, now);
+  const lb = leaveBy(e, now, day);
   const span = e.source === "tanda" ? `${t(e.start)}–${t(e.end)}` : `at ${t(e.start)}`;
   const icon = e.source === "tanda" ? "🧸" : e.source === "timetable" ? "🎓" : "📅";
   const text = `${label}: ${e.title} ${span}${where ? ` (${where})` : ""}${lb ? ` — ${lb.text}` : ""}.`;
@@ -187,7 +187,7 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     const next = evs.find((e) => Date.parse(e.start) > +now);
     if (live) lines.push({ icon: "🟢", text: `Now: ${live.title} until ${t(live.end)}.` });
     if (next) {
-      lines.push(eventLine(phase === "morning" && !live ? "First up" : "Next", next, now));
+      lines.push(eventLine(phase === "morning" && !live ? "First up" : "Next", next, now, d.timeline.today));
       const rest = restOf(evs, next);
       if (rest) lines.push({ icon: "🗓️", text: rest });
     } else if (!live) {
