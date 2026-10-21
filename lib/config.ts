@@ -63,15 +63,24 @@ export const cfg = {
   countdowns,
   alerts: { enabled: env("ALERTS") !== "off", radiusKm: num("ALERT_RADIUS_KM", 15) },
 
+  // Push notifications: time-critical alerts go out immediately; everything else is batched into digests.
+  notify: {
+    quiet: env("NOTIFY_QUIET") ?? "22:30-07:00", // digests never land in here (urgent alerts still do)
+    digests: list("DIGEST_TIMES").length ? list("DIGEST_TIMES") : ["08:00", "15:00", "21:00"],
+    leaveLeadMin: num("LEAVE_ALERT_MIN", 15), // "leave in 15 min" heads-up
+    deadlineHours: num("DEADLINE_ALERT_HOURS", 3), // "closes in 3h" alert
+  },
+
   google: {
     clientId: env("GOOGLE_CLIENT_ID"),
     clientSecret: env("GOOGLE_CLIENT_SECRET"),
-    calendarIds: list("GOOGLE_CALENDAR_IDS").length ? list("GOOGLE_CALENDAR_IDS") : ["primary"],
+    calendarIds: list("GOOGLE_CALENDAR_IDS"), // empty = every calendar ticked in Google Calendar
   },
 
   tanda: {
     token: env("TANDA_TOKEN"),
     base: (env("TANDA_BASE") ?? "https://my.tanda.co/api/v2").replace(/\/$/, ""),
+    payRate: num("PAY_RATE", 0), // $/hour, used only if Tanda doesn't share costs
   },
 
   moodle: { icsUrl: env("MOODLE_ICS_URL") },

@@ -1,12 +1,14 @@
 // Realistic fake data so you can see the whole dashboard before connecting anything (DEMO_MODE=1).
 
-import { buildCoach } from "./coach";
+import { buildCoach, recoveryWhy } from "./coach";
+import { computeStreak } from "./extras";
+import { buildWorkload } from "./workload";
 import { buildBrief } from "./brief";
 import { weatherAdvice } from "./weather-advice";
 import { cfg } from "./config";
 import { addDays, localTime, ymd } from "./time";
 import { recoveryScore, sleepPerformance, trimp, strainFromTrimp } from "./scoring";
-import type { DashboardData, HealthData, TimelineItem, WeatherData, WeatherHour } from "./types";
+import type { DashboardData, DueItem, HealthData, TimelineItem, WeatherData, WeatherHour } from "./types";
 
 const at = (day: string, hhmm: string) => localTime(day, hhmm).toISOString();
 
@@ -81,6 +83,7 @@ export function demoData(now = new Date()): DashboardData {
     ],
     tomorrow: [
       ev("s1", "Shift", tomorrow, "09:30", "16:00", "tanda", "Play centre"),
+      { ...ev("g1", "FIT1049 A3 group meeting", tomorrow, "17:00", "17:45", "calendar", "Zoom"), account: "monash" },
       ev("c3", "Dinner", tomorrow, "18:30", "20:30", "calendar"),
     ],
   };
@@ -118,6 +121,18 @@ export function demoData(now = new Date()): DashboardData {
     advice: weatherAdvice({ now: nowWx, hours: hours.slice(0, 14), today: wToday, aqi: 22 }),
   };
 
+  const demoDue: DueItem[] = [
+    { id: "d1", title: "P6 · Linked lists", due: due(1, "23:59"), source: "ontrack", course: "FIT1008", status: "working on it" },
+    { id: "d2", title: "Quiz W11 [Individual | 0.6%]", due: due(1, "23:55"), source: "moodle", course: "FIT1049" },
+    { id: "d3", title: "Assignment 2 — Block cipher modes (15%)", due: due(4, "23:55"), source: "moodle", course: "FIT1093" },
+    { id: "d4", title: "Assignment 3 [Group | 18%]", due: due(4, "23:55"), source: "moodle", course: "FIT1049" },
+    { id: "d5", title: "Workshop 10 lesson", due: due(5, "17:00"), source: "ed", course: "FIT1008" },
+    { id: "d6", title: "NUT1011 Quiz 3 (5%)", due: due(6, "23:59"), source: "moodle", course: "NUT1011" },
+    { id: "d7", title: "Security+ practice test 3", due: due(9, "23:59"), source: "notion", status: "Not started" },
+  ];
+  const routineHistory: Record<string, number> = {};
+  for (let i = 1; i <= 9; i++) routineHistory[addDays(today, -i)] = i === 4 ? 0 : 3;
+
   const base: Omit<DashboardData, "brief"> = {
     generatedAt: now.toISOString(),
     demo: true,
@@ -125,20 +140,18 @@ export function demoData(now = new Date()): DashboardData {
     health,
     coach: buildCoach(health, timeline, now),
     timeline,
-    due: [
-      { id: "d1", title: "P6 · Linked lists", due: due(1, "23:59"), source: "ontrack", course: "FIT1008", status: "working on it" },
-      { id: "d2", title: "Week 11 quiz", due: due(2, "23:55"), source: "moodle", course: "NUT1011" },
-      { id: "d3", title: "Assignment 2 — Block cipher modes", due: due(4, "23:55"), source: "moodle", course: "FIT1093" },
-      { id: "d4", title: "Workshop 10 lesson", due: due(5, "17:00"), source: "ed", course: "FIT1008" },
-      { id: "d5", title: "Ship Anchor push-alert retry", due: due(6, "23:59"), source: "notion", status: "In progress" },
-      { id: "d6", title: "Security+ practice test 3", due: due(9, "23:59"), source: "notion", status: "Not started" },
-    ],
+    due: demoDue,
     inbox: {
-      unread: 7,
+      unread: 11,
+      accounts: [
+        { email: "jamie.phamm1@gmail.com", unread: 4 },
+        { email: "jpha0042@student.monash.edu", unread: 7 },
+      ],
       messages: [
-        { id: "m1", from: "Monash Connect", subject: "Semester 2 exam timetable now available", url: "#" },
-        { id: "m2", from: "Western Chances", subject: "Internship placements — next steps", url: "#" },
-        { id: "m3", from: "GitHub", subject: "[anchor] Review requested on #142", url: "#" },
+        { id: "m2", from: "Western Chances", subject: "Internship placements — next steps", url: "#", account: "jamie.phamm1@gmail.com" },
+        { id: "m3", from: "GitHub", subject: "[anchor] Review requested on #142", url: "#", account: "jamie.phamm1@gmail.com" },
+        { id: "m1", from: "Monash Connect", subject: "Semester 2 exam timetable now available", url: "#", account: "jpha0042@student.monash.edu" },
+        { id: "m4", from: "FIT1093 Teaching Team", subject: "A3 group allocations released", url: "#", account: "jpha0042@student.monash.edu" },
       ],
     },
     dev: {
@@ -160,6 +173,7 @@ export function demoData(now = new Date()): DashboardData {
       { key: "health", label: "Fitbit Air", state: "ok" },
       { key: "cal", label: "Google Calendar", state: "ok" },
       { key: "inbox", label: "Gmail", state: "ok" },
+      { key: "cal", label: "Calendar · monash", state: "ok" },
       { key: "tanda", label: "Tanda", state: "ok" },
       { key: "tt", label: "Timetable", state: "ok" },
       { key: "moodle", label: "Moodle", state: "ok" },
@@ -186,8 +200,15 @@ export function demoData(now = new Date()): DashboardData {
       { label: "Exams start", date: addDays(today, 12), days: 12 },
       { label: "Security+ exam", date: addDays(today, 41), days: 41 },
     ],
-    routine: { items: cfg.routine, done: [cfg.routine[0]] },
+    routine: { items: cfg.routine, done: [cfg.routine[0]], streak: computeStreak(routineHistory, cfg.routine.length, today) },
     usingPhoneLocation: false,
+    workload: buildWorkload(demoDue, [...timeline.today, ...timeline.tomorrow], now),
+    pay: { periodStart: addDays(today, -6), periodEnd: addDays(today, 7), workedHours: 13.5, pay: 391.5, payIsEstimate: false, upcomingHours: 6.5, upcomingPay: 188.5 },
+    why: recoveryWhy(health),
+    accounts: [
+      { email: "jamie.phamm1@gmail.com", connected: true, primary: true },
+      { email: "jpha0042@student.monash.edu", connected: true, primary: false },
+    ],
   };
   return { ...base, brief: buildBrief(base, now) };
 }

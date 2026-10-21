@@ -5,11 +5,31 @@ import { cfg } from "./config";
 import { addDays, fmtDuration, fmtTime, localTime, ymd } from "./time";
 import { sleepNeedMin } from "./scoring";
 import { travelFor } from "./travel";
+import type { Coach, HealthData, TimelineItem } from "./types";
 
 export function localHour(d: Date): number {
   return Number(new Intl.DateTimeFormat("en-AU", { timeZone: cfg.tz, hour: "numeric", hourCycle: "h23" }).format(d));
 }
-import type { Coach, HealthData, TimelineItem } from "./types";
+
+/** Every score shows its reasons: "HRV 8% below your normal · 1h 20m short on sleep · resting HR normal", biggest factor first. */
+export function recoveryWhy(h: HealthData): string | null {
+  const r = h.recovery;
+  if (r.score == null) return null;
+  const parts: { z: number; txt: string }[] = [];
+  if (r.hrv && r.hrvBaseline) {
+    const pct = Math.round((r.hrv / r.hrvBaseline - 1) * 100);
+    parts.push({ z: Math.abs(r.components.hrv ?? 0) + 0.01, txt: Math.abs(pct) < 4 ? "HRV normal" : `HRV ${Math.abs(pct)}% ${pct > 0 ? "above" : "below"} your normal` });
+  }
+  if (r.rhr && r.rhrBaseline) {
+    const d = Math.round(r.rhr - r.rhrBaseline);
+    parts.push({ z: Math.abs(r.components.rhr ?? 0), txt: Math.abs(d) < 2 ? "resting HR normal" : `resting HR ${Math.abs(d)} bpm ${d > 0 ? "higher" : "lower"} than usual` });
+  }
+  if (h.sleep) {
+    const short = h.sleep.needMin - h.sleep.asleepMin;
+    parts.push({ z: Math.abs(r.components.sleep ?? 0), txt: short > 20 ? `${fmtDuration(short)} short on sleep` : "sleep on target" });
+  }
+  return parts.length ? parts.sort((a, b) => b.z - a.z).map((p) => p.txt).join(" · ") : null;
+}
 
 export function buildCoach(
   h: HealthData | null,

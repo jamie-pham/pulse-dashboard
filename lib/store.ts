@@ -62,13 +62,29 @@ export const store: KV = storeConfigured ? new RedisKV() : new FileKV();
 /** On Vercel the filesystem is read-only, so production needs Redis for anything to persist. */
 export const storeUsable = storeConfigured || !isProd;
 
+// Cache keys carry a generation number, so "clear everything" (e.g. after connecting an account) is one write.
+let genMemo: { v: number; at: number } | null = null;
+async function cacheGen(): Promise<number> {
+  if (genMemo && Date.now() - genMemo.at < 5000) return genMemo.v;
+  const v = (await store.get<number>("cache:gen").catch(() => null)) ?? 0;
+  genMemo = { v, at: Date.now() };
+  return v;
+}
+
+export async function clearCache() {
+  const v = (await cacheGen()) + 1;
+  await store.set("cache:gen", v);
+  genMemo = { v, at: Date.now() };
+}
+
 /** Cache a slow call for a few minutes so refreshing the app is instant. */
 export async function cached<T>(key: string, ttlSec: number, fn: () => Promise<T>, force = false): Promise<T> {
+  const k = `cache:${await cacheGen()}:${key}`;
   if (!force) {
-    const hit = await store.get<T>(`cache:${key}`).catch(() => null);
+    const hit = await store.get<T>(k).catch(() => null);
     if (hit != null) return hit;
   }
   const v = await fn();
-  await store.set(`cache:${key}`, v, ttlSec).catch(() => {});
+  await store.set(k, v, ttlSec).catch(() => {});
   return v;
 }

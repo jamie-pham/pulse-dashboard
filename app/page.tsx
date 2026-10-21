@@ -6,7 +6,8 @@ import { authMode, isAuthed } from "@/lib/session";
 import { storeUsable } from "@/lib/store";
 import { fmtDay } from "@/lib/time";
 import { CoachCard, Rings, SleepCard, StrainCard } from "./components/Health";
-import { DevCard, DueCard, EdCard, InboxCard, SourcesStrip, Timeline } from "./components/Life";
+import { DevCard, DueCard, EdCard, InboxCard, PayCard, SourcesStrip, Timeline } from "./components/Life";
+import WorkloadCard from "./components/Workload";
 import RefreshButton from "./components/RefreshButton";
 import Routine from "./components/Routine";
 import { AlertsCard, BriefCard, CountdownCard } from "./components/Brief";
@@ -71,6 +72,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
 
       {data.demo && <div className="banner">Demo data — set <code>DEMO_MODE=0</code> once your accounts are connected.</div>}
       {params.connected === "1" && <div className="banner ok">Google connected. First load pulls 5 weeks of history, so give it a few seconds.</div>}
+      {params.added && <div className="banner ok">Added {params.added} — its calendars and inbox are now merged in.</div>}
       {params.error && <div className="banner err">{params.error}</div>}
 
       {needsGoogle && (
@@ -88,10 +90,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
 
       <div className="grid">
         <div className="col">
-          {h && <Rings h={h} />}
+          {h && <Rings h={h} why={data.why} />}
           {data.coach && <CoachCard coach={data.coach} band={h?.recovery.band ?? null} />}
-          {data.brief.phase === "morning" && <Routine items={data.routine.items} done={data.routine.done} />}
+          {data.brief.phase === "morning" && (
+            <Routine items={data.routine.items} done={data.routine.done} streak={data.routine.streak} />
+          )}
           <Timeline today={data.timeline.today} tomorrow={data.timeline.tomorrow} now={data.generatedAt} />
+          <WorkloadCard w={data.workload} tz={cfg.tz} />
           <DueCard due={data.due} now={data.generatedAt} />
         </div>
         <div className="col">
@@ -99,15 +104,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
           {h && <StrainCard h={h} />}
           <CountdownCard countdowns={data.countdowns} />
           {data.brief.phase === "day" && data.routine.done.length < data.routine.items.length && (
-            <Routine items={data.routine.items} done={data.routine.done} />
+            <Routine items={data.routine.items} done={data.routine.done} streak={data.routine.streak} />
           )}
+          {data.pay && <PayCard pay={data.pay} />}
           {data.inbox && <InboxCard inbox={data.inbox} />}
           {data.ed && <EdCard ed={data.ed} />}
           {data.dev && <DevCard dev={data.dev} />}
         </div>
       </div>
 
-      <SourcesStrip sources={data.sources} googleExpires={data.google.refreshExpiresAt} />
+      <SourcesStrip sources={data.sources} googleExpires={data.google.refreshExpiresAt} accounts={data.accounts} />
       <p className="footnote">
         Recovery and strain are {cfg.appName}&apos;s own estimates from your Fitbit data, not medical advice.
       </p>

@@ -89,12 +89,39 @@ Stop the alarm and your phone tells you the weather, whether to take an umbrella
 - **Bedtime version:** make a second automation, **Sleep → Wind Down begins** (or a time like 9:30pm), running the same shortcut. After 5pm the brief switches to tonight's bedtime and tomorrow's plan.
 - **Preview without waiting:** in demo mode, open `/?at=07:05` or `/?at=20:30`.
 
+## 7. Notifications
+
+Pulse sends two kinds of push notification (see `PRINCIPLES.md`):
+- **Right away, any hour:** 🚗 leave-by heads-up 15 min before you need to go · ⏰ a deadline closing within 3 hours · ⚠️ a VicEmergency warning near you, or an active incident within 5 km.
+- **Three digests a day** (8am, 3pm, 9pm — never in quiet hours 10:30pm–7am): the three most actionable lines from your brief.
+
+Setup:
+1. On your iPhone, open Pulse **from the Home Screen icon** (notifications only work there), scroll to the bottom and tap **🔔 Turn on notifications** → Allow. You'll get a test notification.
+2. Something has to wake Pulse up every few minutes to check. Make a free account at [cron-job.org](https://cron-job.org) → **Create cronjob**:
+   - URL: `https://YOUR-APP.vercel.app/api/cron`
+   - Schedule: every **5 minutes**
+   - Advanced → Headers: `Authorization` = `Bearer YOUR_BRIEF_TOKEN`
+   - Save. Its history should show `200` and `{"ok":true,…}`.
+
+## 8. More Google accounts (Monash, work…)
+
+At the bottom of Pulse tap **+ Add another Google account**. Each extra account adds its calendars (every calendar ticked in Google Calendar) and its unread Gmail; shared calendars are de-duplicated. First add the account as a **test user** in Google Cloud → Google Auth Platform → Audience, or Google will block it. University/work accounts may also be blocked by the organisation's admin — if so, share that calendar to your main account instead.
+
+## 9. Tanda shifts + pay, and your timetable
+
+- **Tanda:** create an API token with scopes `me roster timesheet cost` and set `TANDA_TOKEN`. Pulse shows your shifts on the timeline, uses them for leave-by times and bedtime, and adds a **Work** card: hours worked this pay period, pay so far, hours still rostered and projected total. If Tanda won't share pay figures, set `PAY_RATE` to your hourly rate.
+- **Monash timetable:** in MyTimetable/Allocate+, find the calendar **subscribe/sync** link and set it as `TIMETABLE_ICS_URL`.
+
 ## Weather and alerts
 
 - **Weather** comes from [Open-Meteo](https://open-meteo.com/). It's free, needs no key, and uses the Bureau of Meteorology's model in its blend. You get current conditions, a 14-hour strip, highs and lows, sunset and air quality, plus plain-English advice: umbrella (≥ 50% rain), jacket (feels ≤ 10°), layers (≥ 10° swing), sunscreen (UV ≥ 3, the Cancer Council threshold), heat, wind and smoke.
 - If you have a class today, the brief also gives the **campus forecast** for your first class.
 - **Near you:** active incidents within `ALERT_RADIUS_KM` (default 15 km) and warnings within 45 km, from VicEmergency's public feed. Incidents that are safe or under control, and planned burns, are filtered out.
-- **Morning routine:** a tick-list from `MORNING_ROUTINE` that resets each day. **Countdowns** come from `COUNTDOWNS`, e.g. exams or the Security+ exam.
+- **Morning routine:** a tick-list from `MORNING_ROUTINE` that resets each day, with a forgiving streak (half the list counts; one free missed day a week; after a lapse it's a fresh start). **Countdowns** come from `COUNTDOWNS`, e.g. exams or the Security+ exam.
+
+## Workload heatmap and study windows
+
+The **Next 2 weeks** card colours each day by how much is due, using the weights already in Moodle titles ("[Group | 18%]"), with a one-line headline like "Heavy Mon: 2 deadlines, 33% of grades". Tap a day to see what's due. **Study windows** finds free gaps of an hour or more today and tomorrow (around classes, shifts and travel) and suggests the most urgent weighted task for each; the best one also appears in your brief. Calendar blocks that just copy a Moodle deadline are hidden from the timeline.
 
 ## How the scores work
 

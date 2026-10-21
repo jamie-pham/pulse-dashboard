@@ -49,6 +49,8 @@ export interface TimelineItem {
   allDay: boolean;
   source: "calendar" | "tanda" | "timetable";
   location?: string;
+  account?: string; // which Google account it came from, if not the primary
+  uid?: string; // for de-duplicating shared calendars
 }
 
 export interface DueItem {
@@ -63,7 +65,8 @@ export interface DueItem {
 
 export interface InboxData {
   unread: number;
-  messages: { id: string; from: string; subject: string; url: string }[];
+  messages: { id: string; from: string; subject: string; url: string; account?: string }[];
+  accounts: { email: string; unread: number }[];
 }
 
 export interface DevItem {
@@ -157,6 +160,7 @@ export interface BriefLine {
   text: string;
   say?: string; // how it should sound when read aloud, if different
   spokenOnly?: boolean; // e.g. current conditions — already shown big in the weather hero
+  kind?: "weather" | "advice" | "body" | "event" | "due" | "study" | "load" | "alert" | "countdown" | "inbox" | "sleep" | "info";
 }
 
 export interface Brief {
@@ -188,7 +192,11 @@ export interface DashboardData {
   weather: WeatherData | null;
   alerts: EmergencyAlert[];
   countdowns: Countdown[];
-  routine: { items: string[]; done: string[] };
+  routine: { items: string[]; done: string[]; streak: import("./extras").Streak };
   brief: Brief;
   usingPhoneLocation: boolean;
+  workload: import("./workload").Workload;
+  pay: import("./sources/tanda").PayData | null;
+  why: string | null;
+  accounts: { email: string | null; connected: boolean; primary: boolean }[];
 }

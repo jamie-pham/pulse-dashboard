@@ -1,5 +1,8 @@
 import { fmtTime, relDue } from "@/lib/time";
 import type { DevData, DueItem, EdData, InboxData, SourceStatus, TimelineItem } from "@/lib/types";
+import type { PayData } from "@/lib/sources/tanda";
+import Accounts from "./Accounts";
+import NotifyButton from "./Notify";
 
 const SRC_COLOR: Record<string, string> = {
   calendar: "var(--strain)",
@@ -39,6 +42,7 @@ export function Timeline({ today, tomorrow, now }: { today: TimelineItem[]; tomo
           </div>
           <div className="muted small">
             {SRC_NAME[e.source]}
+            {e.account ? ` · ${e.account}` : ""}
             {e.location ? ` · ${e.location}` : ""}
           </div>
         </div>
@@ -94,7 +98,10 @@ export function DueCard({ due, now }: { due: DueItem[]; now: string }) {
   );
 }
 
+const shortAcct = (email?: string) => (email ? email.split("@")[1]?.split(".").find((p) => !/^(student|mail|com|edu|au)$/.test(p)) ?? email : "");
+
 export function InboxCard({ inbox }: { inbox: InboxData }) {
+  const multi = inbox.accounts.length > 1;
   return (
     <section className="card">
       <div className="card-head">
@@ -103,6 +110,15 @@ export function InboxCard({ inbox }: { inbox: InboxData }) {
           {inbox.unread} unread →
         </a>
       </div>
+      {multi && (
+        <div className="pills" style={{ marginBottom: 6 }}>
+          {inbox.accounts.map((a) => (
+            <a key={a.email} className="src ok" href={`https://mail.google.com/mail/u/${encodeURIComponent(a.email)}/`} target="_blank" rel="noreferrer">
+              {a.email.split("@")[1]?.includes("gmail") ? a.email.split("@")[0] : shortAcct(a.email)} · {a.unread}
+            </a>
+          ))}
+        </div>
+      )}
       {inbox.messages.length === 0 ? (
         <p className="muted">Inbox zero in Primary.</p>
       ) : (
@@ -112,13 +128,59 @@ export function InboxCard({ inbox }: { inbox: InboxData }) {
               <a href={m.url} target="_blank" rel="noreferrer">
                 <div className="li-main">
                   <div className="li-title">{m.subject}</div>
-                  <div className="muted small">{m.from}</div>
+                  <div className="muted small">
+                    {m.from}
+                    {multi && m.account ? ` · ${m.account.split("@")[1]?.includes("gmail") ? m.account.split("@")[0] : shortAcct(m.account)}` : ""}
+                  </div>
                 </div>
               </a>
             </li>
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+const money = (n: number) => `$${n.toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const shortDate = (d: string) =>
+  d ? new Intl.DateTimeFormat("en-AU", { timeZone: "UTC", day: "numeric", month: "short" }).format(new Date(`${d}T12:00:00Z`)) : "";
+
+export function PayCard({ pay }: { pay: PayData }) {
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h3>Work</h3>
+        <span className="muted small">
+          pay period {shortDate(pay.periodStart)}–{shortDate(pay.periodEnd)}
+        </span>
+      </div>
+      <div className="stats" style={{ marginTop: 0, paddingTop: 0, borderTop: "none" }}>
+        <div>
+          <div className="stat-label">Worked so far</div>
+          <div className="stat-value">
+            {pay.workedHours}
+            <span className="unit">h</span>
+          </div>
+        </div>
+        <div>
+          <div className="stat-label">{pay.payIsEstimate ? "Pay (estimate)" : "Pay so far"}</div>
+          <div className="stat-value">{pay.pay != null ? money(pay.pay) : <span className="muted small">set PAY_RATE</span>}</div>
+        </div>
+        <div>
+          <div className="stat-label">Still rostered</div>
+          <div className="stat-value">
+            {pay.upcomingHours}
+            <span className="unit">h</span>
+          </div>
+        </div>
+        <div>
+          <div className="stat-label">Projected total</div>
+          <div className="stat-value">
+            {pay.pay != null && pay.upcomingPay != null ? money(pay.pay + pay.upcomingPay) : "—"}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -189,7 +251,15 @@ export function EdCard({ ed }: { ed: EdData }) {
   );
 }
 
-export function SourcesStrip({ sources, googleExpires }: { sources: SourceStatus[]; googleExpires: string | null }) {
+export function SourcesStrip({
+  sources,
+  googleExpires,
+  accounts,
+}: {
+  sources: SourceStatus[];
+  googleExpires: string | null;
+  accounts?: { email: string | null; connected: boolean; primary: boolean }[];
+}) {
   const daysLeft = googleExpires ? Math.floor((Date.parse(googleExpires) - Date.now()) / 86400e3) : null;
   return (
     <section className="sources">
@@ -220,6 +290,8 @@ export function SourcesStrip({ sources, googleExpires }: { sources: SourceStatus
           Google sign-in expires in {Math.max(0, daysLeft)}d (testing-mode limit) — <a href="/api/google/start">reconnect</a>.
         </p>
       )}
+      <NotifyButton />
+      {accounts && accounts.length > 0 && <Accounts accounts={accounts} />}
       <form action="/api/logout" method="post" className="logout">
         <a href="/api/google/start" className="muted small">Reconnect Google</a>
         <span className="muted small"> · </span>

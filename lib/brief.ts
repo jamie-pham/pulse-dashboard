@@ -5,6 +5,7 @@ import { cfg } from "./config";
 import { localHour } from "./coach";
 import { addDays, fmtTime, ymd } from "./time";
 import { travelFor } from "./travel";
+import { spanLabel } from "./workload";
 import { wmo } from "./weather-advice";
 import type { Brief, BriefLine, DashboardData, TimelineItem } from "./types";
 
@@ -58,7 +59,7 @@ function eventLine(label: string, e: TimelineItem, now: Date): BriefLine {
   const icon = e.source === "tanda" ? "🧸" : e.source === "timetable" ? "🎓" : "📅";
   const text = `${label}: ${e.title} ${span}${where ? ` (${where})` : ""}${lb ? ` — ${lb.text}` : ""}.`;
   const say = `${label} is ${e.title} ${e.source === "tanda" ? `from ${t(e.start)} to ${t(e.end)}` : `at ${t(e.start)}`}${where ? ` at ${where}` : ""}${lb ? `. ${lb.text[0].toUpperCase()}${lb.text.slice(1)}` : ""}.`;
-  return { icon, text, say };
+  return { icon, text, say, kind: "event" };
 }
 
 function restOf(events: TimelineItem[], after: TimelineItem): string | null {
@@ -73,7 +74,7 @@ function dueLines(d: Input, day: string, label: string): BriefLine[] {
   if (!items.length) return [];
   const names = items.slice(0, 3).map((x) => x.title);
   const more = items.length > 3 ? ` +${items.length - 3} more` : "";
-  return [{ icon: "📌", text: `Due ${label}: ${names.join(", ")}${more}.` }];
+  return [{ icon: "📌", text: `Due ${label}: ${names.join(", ")}${more}.`, kind: "due" }];
 }
 
 function weatherLine(d: Input): BriefLine[] {
@@ -86,9 +87,10 @@ function weatherLine(d: Input): BriefLine[] {
       text: `${w.now.temp}° and ${label.toLowerCase()}, heading to ${w.today.max}°.`,
       say: `It's ${w.now.temp}° and ${label.toLowerCase()}, heading to ${w.today.max}°.`,
       spokenOnly: true,
+      kind: "weather",
     },
   ];
-  for (const a of w.advice.slice(0, 2)) lines.push({ icon: a.icon, text: `${a.text}.`, say: a.say ? `${a.say}.` : undefined });
+  for (const a of w.advice.slice(0, 2)) lines.push({ icon: a.icon, text: `${a.text}.`, say: a.say ? `${a.say}.` : undefined, kind: "advice" });
   return lines;
 }
 
@@ -102,6 +104,7 @@ function bodyLine(d: Input): BriefLine[] {
     return [
       {
         icon: "🫀",
+        kind: "body",
         text: r.calibrating
           ? `Recovery is still calibrating — keep wearing the Air to bed.${slept}`
           : `Last night hasn't synced yet — open the Google Health app.${slept}`,
@@ -112,16 +115,43 @@ function bodyLine(d: Input): BriefLine[] {
   return [
     {
       icon: r.band === "green" ? "💚" : r.band === "yellow" ? "💛" : "❤️",
+      kind: "body",
       text: `Recovery ${r.score}% — ${verdict}.${slept}`,
       say: `Your recovery is ${r.score}%, ${r.band}: ${verdict}.${sleep ? ` You slept ${sayDuration(sleep.asleepMin)}${sleep.asleepMin < sleep.needMin - 20 ? `, about ${sayDuration(sleep.needMin - sleep.asleepMin)} short` : ""}.` : ""}`,
     },
   ];
 }
 
+function dueWhen(iso: string, now: Date): string {
+  const d = ymd(new Date(iso));
+  if (d === ymd(now)) return "tonight";
+  if (d === addDays(ymd(now), 1)) return "tomorrow";
+  return new Intl.DateTimeFormat("en-AU", { timeZone: cfg.tz, weekday: "long" }).format(new Date(iso));
+}
+
+/** One study window + a heavy-week heads-up (glanceable; the full heatmap lives behind a tap). */
+function studyLines(d: Input, day: string, now: Date, prefix?: string): BriefLine[] {
+  const out: BriefLine[] = [];
+  const blk = d.workload?.blocks.find((b) => ymd(new Date(b.start)) === day);
+  if (blk) {
+    const w = blk.task.weight ? `${blk.task.weight}%, ` : "";
+    out.push({
+      icon: "📚",
+      kind: "study",
+      text: `${prefix ? `${prefix} best study window` : "Free"} ${spanLabel(blk.start, blk.end)}: ${blk.task.title} (${w}due ${dueWhen(blk.task.due, now)}).`,
+      say: `${prefix ? `${prefix} best study window` : "You're free"} ${spanLabel(blk.start, blk.end)}. Good time for ${blk.task.title}, due ${dueWhen(blk.task.due, now)}.`,
+    });
+  }
+  const h = d.workload?.headline;
+  if (h && h.level >= 3) out.push({ icon: "🔥", kind: "load", text: `${h.text}.` });
+  return out;
+}
+
 function alertLines(d: Input): BriefLine[] {
   return d.alerts.slice(0, 2).map((a) => ({
     icon: "⚠️",
     text: `${a.title} ${a.distanceKm} km away${a.status ? ` (${a.status})` : ""} — check VicEmergency.`,
+    kind: "alert" as const,
   }));
 }
 
@@ -129,7 +159,7 @@ function countdownLines(d: Input): BriefLine[] {
   return d.countdowns
     .filter((c) => c.days >= 0 && c.days <= 14)
     .slice(0, 2)
-    .map((c) => ({ icon: "⏳", text: c.days === 0 ? `${c.label} is today.` : `${c.label} in ${c.days} day${c.days === 1 ? "" : "s"}.` }));
+    .map((c) => ({ icon: "⏳", kind: "countdown" as const, text: c.days === 0 ? `${c.label} is today.` : `${c.label} in ${c.days} day${c.days === 1 ? "" : "s"}.` }));
 }
 
 export function buildBrief(d: Input, now = new Date()): Brief {
@@ -165,9 +195,10 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     }
     lines.push(...dueLines(d, today, "today"));
     if (phase === "morning") lines.push(...dueLines(d, tomorrow, "tomorrow"));
+    lines.push(...studyLines(d, today, now));
     lines.push(...countdownLines(d));
     lines.push(...alertLines(d));
-    if (phase === "morning" && d.inbox?.unread) lines.push({ icon: "✉️", text: `${d.inbox.unread} unread email${d.inbox.unread === 1 ? "" : "s"}.` });
+    if (phase === "morning" && d.inbox?.unread) lines.push({ icon: "✉️", kind: "inbox", text: `${d.inbox.unread} unread email${d.inbox.unread === 1 ? "" : "s"}.` });
   } else {
     const smallHours = phase === "night" && hour < 4;
     const nextDay = smallHours ? today : tomorrow;
@@ -179,10 +210,11 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     if (tn) {
       if (phase === "night") {
         const left = Math.max(0, (Date.parse(tn.wakeAt) - +now) / 60e3 - 15);
-        lines.push({ icon: "🌙", text: `Bed now gets you ${shortDur(left)} before a ${t(tn.wakeAt)} wake (${tn.reason}).` });
+        lines.push({ icon: "🌙", kind: "sleep", text: `Bed now gets you ${shortDur(left)} before a ${t(tn.wakeAt)} wake (${tn.reason}).` });
       } else {
         lines.push({
           icon: "🌙",
+          kind: "sleep",
           text: `In bed by ${t(tn.bedtime)} for ${shortDur(tn.needMin)} of sleep — wake ${t(tn.wakeAt)} (${tn.reason}).`,
         });
       }
@@ -204,6 +236,7 @@ export function buildBrief(d: Input, now = new Date()): Brief {
       lines.push({ icon: "🗓️", text: `Nothing on ${smallHours ? "today" : "tomorrow"} — sleep in if you can.` });
     }
     lines.push(...dueLines(d, nextDay, smallHours ? "today" : "tomorrow"));
+    lines.push(...studyLines(d, nextDay, now, smallHours ? undefined : "Tomorrow's"));
     lines.push(...countdownLines(d));
     lines.push(...alertLines(d));
   }

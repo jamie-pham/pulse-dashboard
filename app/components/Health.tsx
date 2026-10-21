@@ -44,10 +44,15 @@ function Ring({
   );
 }
 
-export function Rings({ h }: { h: HealthData }) {
+export function Rings({ h, why }: { h: HealthData; why?: string | null }) {
   const rec = h.recovery;
   return (
     <section className="rings">
+      {why && rec.score != null && (
+        <p className="why">
+          <b>Why {rec.score}%:</b> {why}
+        </p>
+      )}
       <Ring
         label="Recovery"
         value={rec.score}
