@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: cfg.appName,
   description: "Recovery, strain, sleep and everything on today's plate.",
   applicationName: cfg.appName,
-  appleWebApp: { capable: true, title: cfg.appName, statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: cfg.appName, statusBarStyle: "default" },
   icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
   robots: { index: false, follow: false },
 };
@@ -16,7 +16,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0a0b0d",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0b0d" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f3f6" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

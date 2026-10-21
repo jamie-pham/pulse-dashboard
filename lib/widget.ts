@@ -86,7 +86,9 @@ export function buildWidget(d: DashboardData, now = new Date()): WidgetFeed {
   const tip = w?.advice.find((a) => !/^(☀️|🌙)/.test(a.icon)) ?? null;
 
   const r = d.health?.recovery;
-  const alert = d.alerts.find((a) => a.kind === "warning") ?? d.alerts.find((a) => a.distanceKm <= 5) ?? null;
+  // Only official warnings take over the lock screen / top card. Incidents (a tree down, a car fire) stay in the
+  // dashboard's "Near you" card and urgent notifications — putting them first every time would over-alarm.
+  const alert = d.alerts.find((a) => a.kind === "warning") ?? null;
 
   return {
     v: 1,

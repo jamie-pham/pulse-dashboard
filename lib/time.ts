@@ -58,6 +58,9 @@ export function fmtTime(iso: string | Date, tz = cfg.tz): string {
     .toLowerCase();
 }
 
+/** "10am", "1:30pm" — the short form used everywhere on screen. */
+export const fmtShort = (iso: string | Date, tz = cfg.tz) => fmtTime(iso, tz).replace(":00", "");
+
 export function fmtDay(iso: string | Date, tz = cfg.tz): string {
   return new Intl.DateTimeFormat("en-AU", { timeZone: tz, weekday: "short", day: "numeric", month: "short" }).format(
     new Date(iso),
@@ -78,10 +81,10 @@ export function relDue(iso: string, now = new Date()): { label: string; urgency:
   const days = Math.round((Date.parse(dueDay) - Date.parse(today)) / 86400000);
   if (due.getTime() < now.getTime()) {
     const hoursLate = (now.getTime() - due.getTime()) / 3600e3;
-    return { label: days === 0 || hoursLate < 24 ? `overdue · ${fmtTime(due)}` : `${-days}d overdue`, urgency: "overdue" };
+    return { label: days === 0 || hoursLate < 24 ? `overdue · ${fmtShort(due)}` : `${-days}d overdue`, urgency: "overdue" };
   }
-  if (days === 0) return { label: `today ${fmtTime(due)}`, urgency: "today" };
-  if (days === 1) return { label: `tomorrow ${fmtTime(due)}`, urgency: "soon" };
-  if (days <= 3) return { label: `${fmtDay(due)} ${fmtTime(due)}`, urgency: "soon" };
+  if (days === 0) return { label: `today ${fmtShort(due)}`, urgency: "today" };
+  if (days === 1) return { label: `tomorrow ${fmtShort(due)}`, urgency: "soon" };
+  if (days <= 3) return { label: `${fmtDay(due)} ${fmtShort(due)}`, urgency: "soon" };
   return { label: fmtDay(due), urgency: "later" };
 }

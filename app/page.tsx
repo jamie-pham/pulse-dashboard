@@ -8,6 +8,8 @@ import { fmtDay } from "@/lib/time";
 import { CoachCard, Rings, SleepCard, StrainCard } from "./components/Health";
 import { DevCard, DueCard, EdCard, InboxCard, PayCard, SourcesStrip, Timeline } from "./components/Life";
 import WorkloadCard from "./components/Workload";
+import NowCard from "./components/NowCard";
+import { buildWidget } from "@/lib/widget";
 import RefreshButton from "./components/RefreshButton";
 import Routine from "./components/Routine";
 import { AlertsCard, BriefCard, CountdownCard } from "./components/Brief";
@@ -85,7 +87,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         <div className="banner">Add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> to pull in Fitbit, Calendar and Gmail.</div>
       )}
 
-      <BriefCard brief={data.brief} weather={data.weather} usingPhone={data.usingPhoneLocation} now={data.generatedAt} />
+      <NowCard feed={buildWidget(data, now)} tz={cfg.tz} />
+      <BriefCard
+        brief={data.brief}
+        weather={data.weather}
+        usingPhone={data.usingPhoneLocation}
+        now={data.generatedAt}
+        hideKinds={data.alerts.length ? ["event", "alert"] : ["event"]}
+      />
       <AlertsCard alerts={data.alerts} />
 
       <div className="grid">

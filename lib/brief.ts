@@ -5,6 +5,7 @@ import { cfg } from "./config";
 import { localHour } from "./coach";
 import { addDays, fmtTime, ymd } from "./time";
 import { travelFrom } from "./travel";
+import { shortTitle } from "./widget";
 import { spanLabel } from "./workload";
 import { wmo } from "./weather-advice";
 import type { Brief, BriefLine, DashboardData, TimelineItem } from "./types";
@@ -72,7 +73,7 @@ function restOf(events: TimelineItem[], after: TimelineItem): string | null {
 function dueLines(d: Input, day: string, label: string): BriefLine[] {
   const items = d.due.filter((x) => ymd(new Date(x.due)) === day);
   if (!items.length) return [];
-  const names = items.slice(0, 3).map((x) => x.title);
+  const names = items.slice(0, 3).map((x) => shortTitle(x.title));
   const more = items.length > 3 ? ` +${items.length - 3} more` : "";
   return [{ icon: "📌", text: `Due ${label}: ${names.join(", ")}${more}.`, kind: "due" }];
 }
@@ -138,8 +139,8 @@ function studyLines(d: Input, day: string, now: Date, prefix?: string): BriefLin
     out.push({
       icon: "📚",
       kind: "study",
-      text: `${prefix ? `${prefix} best study window` : "Free"} ${spanLabel(blk.start, blk.end)}: ${blk.task.title} (${w}due ${dueWhen(blk.task.due, now)}).`,
-      say: `${prefix ? `${prefix} best study window` : "You're free"} ${spanLabel(blk.start, blk.end)}. Good time for ${blk.task.title}, due ${dueWhen(blk.task.due, now)}.`,
+      text: `${prefix ? `${prefix} best study window` : "Free"} ${spanLabel(blk.start, blk.end)}: ${shortTitle(blk.task.title)} (${w}due ${dueWhen(blk.task.due, now)}).`,
+      say: `${prefix ? `${prefix} best study window` : "You're free"} ${spanLabel(blk.start, blk.end)}. Good time for ${shortTitle(blk.task.title)}, due ${dueWhen(blk.task.due, now)}.`,
     });
   }
   const h = d.workload?.headline;
@@ -178,20 +179,20 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     lines.push(...weatherLine(d));
     if (d.weather?.campus && phase === "morning") {
       const c = d.weather.campus;
-      lines.push({ icon: "🎓", text: `${c.label} at ${t(c.at)}: ${c.temp}°${c.pop >= 30 ? `, ${c.pop}% rain` : ""}.` });
+      lines.push({ icon: "🎓", kind: "weather", text: `${c.label} at ${t(c.at)}: ${c.temp}°${c.pop >= 30 ? `, ${c.pop}% rain` : ""}.` });
     }
     if (phase === "morning") lines.push(...bodyLine(d));
 
     const evs = upcoming(d.timeline.today);
     const live = evs.find((e) => Date.parse(e.start) <= +now);
     const next = evs.find((e) => Date.parse(e.start) > +now);
-    if (live) lines.push({ icon: "🟢", text: `Now: ${live.title} until ${t(live.end)}.` });
+    if (live) lines.push({ icon: "🟢", kind: "event", text: `Now: ${live.title} until ${t(live.end)}.` });
     if (next) {
       lines.push(eventLine(phase === "morning" && !live ? "First up" : "Next", next, now, d.timeline.today));
       const rest = restOf(evs, next);
-      if (rest) lines.push({ icon: "🗓️", text: rest });
+      if (rest) lines.push({ icon: "🗓️", kind: "event", text: rest });
     } else if (!live) {
-      lines.push({ icon: "🗓️", text: "Nothing else scheduled today." });
+      lines.push({ icon: "🗓️", kind: "event", text: "Nothing else scheduled today." });
     }
     lines.push(...dueLines(d, today, "today"));
     if (phase === "morning") lines.push(...dueLines(d, tomorrow, "tomorrow"));
@@ -233,7 +234,7 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     if (first) {
       lines.push(eventLine(smallHours ? "First up today" : "First up tomorrow", first, now));
     } else {
-      lines.push({ icon: "🗓️", text: `Nothing on ${smallHours ? "today" : "tomorrow"} — sleep in if you can.` });
+      lines.push({ icon: "🗓️", kind: "event", text: `Nothing on ${smallHours ? "today" : "tomorrow"} — sleep in if you can.` });
     }
     lines.push(...dueLines(d, nextDay, smallHours ? "today" : "tomorrow"));
     lines.push(...studyLines(d, nextDay, now, smallHours ? undefined : "Tomorrow's"));

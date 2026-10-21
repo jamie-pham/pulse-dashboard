@@ -1,4 +1,9 @@
 import { fmtTime, relDue } from "@/lib/time";
+import { shortTitle } from "@/lib/widget";
+import { weightOf } from "@/lib/workload";
+
+/** One time style everywhere: "10am", "1:30pm". */
+const hm = (iso: string) => fmtTime(iso).replace(":00", "");
 import type { DevData, DueItem, EdData, InboxData, SourceStatus, TimelineItem } from "@/lib/types";
 import type { PayData } from "@/lib/sources/tanda";
 import Accounts from "./Accounts";
@@ -31,8 +36,8 @@ export function Timeline({ today, tomorrow, now }: { today: TimelineItem[]; tomo
     return (
       <li key={e.id} className={`${past ? "past" : ""} ${live ? "live" : ""}`}>
         <div className="time">
-          {e.allDay ? "all day" : fmtTime(e.start)}
-          {!e.allDay && <div className="muted">{fmtTime(e.end)}</div>}
+          {e.allDay ? "all day" : hm(e.start)}
+          {!e.allDay && <div className="muted">{hm(e.end)}</div>}
         </div>
         <span className="bar" style={{ background: SRC_COLOR[e.source] }} />
         <div className="li-main">
@@ -78,11 +83,15 @@ export function DueCard({ due, now }: { due: DueItem[]; now: string }) {
         <ul className="list">
           {due.map((d) => {
             const r = relDue(d.due, new Date(now));
+            const w = weightOf(d.title);
             const inner = (
               <>
                 <span className="dot" style={{ background: SRC_COLOR[d.source] }} />
                 <div className="li-main">
-                  <div className="li-title">{d.title}</div>
+                  <div className="li-title">
+                    {shortTitle(d.title)}
+                    {w != null && <span className="pill weight">{w}%</span>}
+                  </div>
                   <div className="muted small">
                     {[d.course, SRC_NAME[d.source], d.status].filter(Boolean).join(" · ")}
                   </div>

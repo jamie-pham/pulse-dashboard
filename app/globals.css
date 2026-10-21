@@ -16,7 +16,39 @@
   --light: #c9c0ff;
   --awake: #ff8a65;
   --radius: 18px;
+  --text2: var(--text2);      /* secondary body text */
+  --faint: #5c626b;
+  --tint: var(--tint);
+  --hero-a: var(--hero-a);
+  --hero-b: var(--hero-b);
+  --on-accent: var(--on-accent);
   color-scheme: dark;
+}
+
+/* Light theme follows the phone's setting. Light text-on-dark reads worse in daylight, especially small text
+   (NN/g, 2020), so Pulse no longer forces dark mode. Accents are darkened to keep ≥4.5:1 contrast on white. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f2f3f6;
+    --card: #ffffff;
+    --card2: #eceef2;
+    --line: #e1e4e9;
+    --text: #111318;
+    --muted: #5d6470;
+    --text2: #343a44;
+    --faint: #8a909a;
+    --tint: rgba(0, 0, 0, 0.05);
+    --hero-a: #e6eefa;
+    --hero-b: #ece8fb;
+    --green: #0f9f5c;
+    --yellow: #a87800;
+    --red: #d63a3a;
+    --orange: #c8650a;
+    --strain: #1677d2;
+    --sleep: #6a52e0;
+    --on-accent: #ffffff;
+    color-scheme: light;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -82,7 +114,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 /* Coach */
 .coach { border-left-width: 4px; }
 .coach-head { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-.coach p { margin: 6px 0 0; color: #cfd3d9; }
+.coach p { margin: 6px 0 0; color: var(--text2); }
 .tonight { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .tonight-icon { font-size: 20px; color: var(--sleep); width: 32px; height: 32px; display: grid; place-items: center; background: var(--card2); border-radius: 10px; flex: none; }
 
@@ -138,14 +170,14 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 .timeline .bar { border-radius: 2px; }
 .timeline li.past { opacity: 0.42; }
 .pill { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; margin-left: 8px; vertical-align: 1px; }
-.live-pill { background: var(--green); color: #04130c; }
+.live-pill { background: var(--green); color: var(--on-accent); }
 
 /* Banners / connect / setup */
-.banner { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px; color: #cfd3d9; }
+.banner { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px; color: var(--text2); }
 .banner.ok { border-color: rgba(47, 216, 137, 0.4); }
 .banner.err { border-color: rgba(255, 95, 95, 0.5); }
 .connect { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; border-color: var(--strain); }
-.setup p { color: #cfd3d9; }
+.setup p { color: var(--text2); }
 
 /* Sources strip */
 .sources { margin-top: 18px; }
@@ -154,10 +186,10 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 .src i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
 .src.error i { background: var(--red); }
 .src.reconnect i { background: var(--yellow); }
-.src-msg { font-size: 12.5px; color: #cfd3d9; margin: 8px 0 0; }
+.src-msg { font-size: 12.5px; color: var(--text2); margin: 8px 0 0; }
 .logout { margin-top: 12px; }
 button.link { background: none; border: none; padding: 0; font: inherit; font-size: 12.5px; cursor: pointer; }
-.footnote { color: #5c626b; font-size: 11.5px; margin-top: 14px; }
+.footnote { color: var(--faint); font-size: 11.5px; margin-top: 14px; }
 
 /* Login */
 .login { text-align: center; padding-top: 18vh; }
@@ -169,17 +201,17 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .err { color: var(--red); margin: 0; }
 
 /* ---------- Brief / weather hero ---------- */
-.brief { margin-bottom: 12px; padding: 18px 16px 14px; background: linear-gradient(180deg, #17202b 0%, var(--card) 62%); }
-.brief.phase-evening, .brief.phase-night { background: linear-gradient(180deg, #1b1830 0%, var(--card) 62%); }
+.brief { margin-bottom: 12px; padding: 18px 16px 14px; background: linear-gradient(180deg, var(--hero-a) 0%, var(--card) 62%); }
+.brief.phase-evening, .brief.phase-night { background: linear-gradient(180deg, var(--hero-b) 0%, var(--card) 62%); }
 .wx { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
-.wx-icon { font-size: 52px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.35)); }
-.wx-temp { font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
-.wx-cond { color: #cfd3d9; font-size: 14px; margin-top: 4px; }
+.wx-icon { font-size: 42px; line-height: 1; filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.35)); }
+.wx-temp { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.wx-cond { color: var(--text2); font-size: 14px; margin-top: 4px; }
 .wx-side { text-align: right; font-size: 15px; font-weight: 600; line-height: 1.5; }
 .hourly { display: flex; gap: 4px; overflow-x: auto; margin: 16px -16px 0; padding: 0 16px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
 .hourly::-webkit-scrollbar { display: none; }
 .hour { flex: 0 0 48px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 0; border-radius: 12px; scroll-snap-align: start; }
-.hour:first-child { background: rgba(255, 255, 255, 0.06); }
+.hour:first-child { background: var(--tint); }
 .hour-t { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .hour-i { font-size: 20px; line-height: 1.2; }
 .hour-temp { font-size: 14px; font-weight: 650; }
@@ -188,7 +220,7 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .brief-head h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 700; }
 .speak { display: inline-flex; align-items: center; gap: 6px; background: var(--text); color: var(--bg); border: none; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .brief-lines { list-style: none; margin: 0; padding: 0; }
-.brief-lines li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 6px 0; font-size: 15px; line-height: 1.38; color: #e3e6ea; }
+.brief-lines li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 6px 0; font-size: 15px; line-height: 1.38; color: var(--text); }
 .bl-icon { font-size: 16px; text-align: center; line-height: 1.38; }
 .brief-foot { margin-top: 10px; }
 .loc button.link { color: var(--strain); font-size: 12.5px; }
@@ -204,7 +236,7 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .checks { list-style: none; margin: 0; padding: 0; }
 .check { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; color: var(--text); font: inherit; padding: 9px 0; cursor: pointer; text-align: left; }
 .check .box { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--line); display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: none; transition: all 0.15s ease; }
-.check.on .box { background: var(--green); border-color: var(--green); color: #04130c; }
+.check.on .box { background: var(--green); border-color: var(--green); color: var(--on-accent); }
 .check.on span:last-child { color: var(--muted); text-decoration: line-through; }
 
 /* Countdowns */
@@ -215,7 +247,7 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .cd-l { font-weight: 600; margin-top: 6px; }
 
 /* ---------- Why line under the rings ---------- */
-.rings .why { grid-column: 1 / -1; order: 2; margin: 10px 6px 0; font-size: 12.5px; color: #cfd3d9; text-align: center; line-height: 1.4; }
+.rings .why { grid-column: 1 / -1; order: 2; margin: 10px 6px 0; font-size: 12.5px; color: var(--text2); text-align: center; line-height: 1.4; }
 .rings .why b { color: var(--text); font-weight: 650; }
 
 /* ---------- Workload heatmap ---------- */
@@ -230,7 +262,7 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .heat-cell.lvl4 { background: rgba(255, 95, 95, 0.6); }
 .heat-cell.sel { border-color: var(--text); }
 .heat-d { font-size: 10.5px; color: var(--muted); font-weight: 600; }
-.heat-cell.lvl3 .heat-d, .heat-cell.lvl4 .heat-d { color: #f1f2f4cc; }
+.heat-cell.lvl3 .heat-d, .heat-cell.lvl4 .heat-d { color: var(--text); }
 .heat-n { font-size: 14px; font-weight: 650; }
 .heat-c { position: absolute; top: 3px; right: 4px; font-size: 9.5px; font-weight: 800; color: var(--text); opacity: 0.85; }
 .heat-detail { margin-top: 4px; }
@@ -246,3 +278,31 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .acct-list { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-direction: column; gap: 8px; }
 .acct-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .acct-list a { color: var(--strain); }
+
+/* ---------- Now card: the 5-second glance ---------- */
+.now { margin-bottom: 12px; padding: 18px 18px 16px; border-left-width: 4px; border-left-color: var(--strain); }
+.now-go { border-left-color: var(--green); }
+.now-urgent { border-left-color: var(--orange); background: linear-gradient(180deg, rgba(255, 159, 67, 0.12), var(--card)); }
+.now-alert { border-color: var(--red); border-left-color: var(--red); background: linear-gradient(180deg, rgba(255, 95, 95, 0.12), var(--card)); }
+.now-kicker { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
+.now-go .now-kicker { color: var(--green); }
+.now-urgent .now-kicker { color: var(--orange); }
+.now-alert .now-kicker { color: var(--red); }
+.now-big { font-size: 28px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; margin-top: 4px; overflow-wrap: anywhere; }
+.now-sub { font-size: 15px; color: var(--text2); margin-top: 4px; }
+.now-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chip { font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--card2); color: var(--text); white-space: nowrap; }
+.chip.warn { color: var(--strain); }
+
+/* Brief: three lines, the rest one tap away */
+.brief-more summary { cursor: pointer; color: var(--strain); font-size: 13.5px; font-weight: 600; padding: 6px 0 2px 34px; list-style: none; }
+.brief-more summary::-webkit-details-marker { display: none; }
+.brief-more[open] summary { display: none; }
+
+/* Deadline weight chip */
+.pill.weight { background: var(--card2); color: var(--muted); font-weight: 650; }
+
+/* Respect "Reduce Motion" */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

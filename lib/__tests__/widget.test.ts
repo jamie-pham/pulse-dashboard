@@ -46,3 +46,11 @@ test("every time in the feed is UTC ISO with milliseconds (the Swift decoder rel
   const times = [f.generatedAt, ...f.events.flatMap((e) => [e.start, e.end, e.leaveAt]), ...f.due.map((d) => d.due), f.weather?.rainAt, f.study?.start, f.study?.end].filter(Boolean) as string[];
   for (const t of times) assert.match(t, isoRe);
 });
+
+test("only official warnings take the top slot; a nearby incident doesn't", () => {
+  const now = localTime(today, "07:05");
+  const d = demoData(now);
+  assert.equal(buildWidget({ ...d, alerts: d.alerts.filter((a) => a.kind === "incident") }, now).alert, null);
+  const warning = { id: "w", kind: "warning" as const, title: "Emergency Warning", detail: "Bushfire", status: "", distanceKm: 12, updated: "", url: "#" };
+  assert.equal(buildWidget({ ...d, alerts: [warning] }, now).alert?.title, "Emergency Warning");
+});

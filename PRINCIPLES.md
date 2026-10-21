@@ -15,3 +15,15 @@ Pulse is built to be opened every day, so every feature has to earn its place ag
 6. **Streaks forgive.** Streaks lift retention, but losing one discourages people enough to quit ([Duolingo](https://blog.duolingo.com/how-streaks-keep-duolingo-learners-committed-to-their-language-goals/)). One free missed day a week; after a lapse it's a "fresh start", never "streak lost".
 
 When adding a feature, check: can it be read in 5 seconds? Does it need any manual input? If it notifies, is it truly urgent — or should it wait for a digest?
+
+## Interface (Oct 2026 research, audience: uni students on iPhone who get pulled into other apps)
+
+1. **One answer above the fold.** The Now card says the single most useful thing (leave / now / next / free) with a live countdown. Same logic as the lock screen widget, so the two always agree. *(NN/g: dashboards are for at-a-glance reading with little cognitive effort.)*
+2. **Satisfy, then release.** Quick, rewarding checks build checking habits (Oulasvirta et al. 2012), so Pulse ends the check rather than extending it. The brief shows 3 lines and the rest sits behind "N more"; nothing scrolls forever. *(Calm technology: require the smallest possible amount of attention; use the periphery, i.e. the lock screen.)*
+3. **Say it once.** Nothing shown in one card is repeated in another (event → Now card, incidents → Near you).
+4. **Proportionate alarm.** Only official warnings take the top slot or the lock screen. Incidents get their own card and a push if close.
+5. **Follow the phone's light/dark setting.** Light mode reads better in daylight, especially small text (NN/g); dark mode suits night. Accents are darkened in light mode to keep text contrast ≥ 4.5:1.
+6. **Looks count as usability.** Attractive interfaces are judged easier to use, before *and* after use (Tractinsky 2000). Treat polish as function: generous white space, a calm palette and simple type are what this age group rates highest (survey of 200 Gen Z, white space strongest effect).
+7. **Write for a glance.** One time style ("10am", "1:30pm"); short titles ("Assignment 3", with weight as a chip); numbers in tabular figures; 11pt minimum on widgets (Apple HIG).
+8. **Colour is a second cue, never the only one.** Every colour also has an icon or a word, since about 8% of men have colour-vision deficiency.
+9. **Respect Reduce Motion**, and put frequent actions where a thumb reaches; about half of people use their phone one-handed (Hoober).

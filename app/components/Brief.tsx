@@ -3,6 +3,20 @@ import { wmo } from "@/lib/weather-advice";
 import type { Brief, Countdown, EmergencyAlert, WeatherData } from "@/lib/types";
 import { LocationButton, SpeakButton } from "./AssistantButtons";
 
+// Show three lines, ranked by how actionable they are; the rest sit behind "N more" (the spoken brief still
+// reads everything). Kinds already shown elsewhere on screen — the next event in the Now card, alerts in their
+// own card — aren't repeated.
+const RANK = ["sleep", "due", "advice", "study", "load", "body", "countdown", "info", "inbox", "weather", "event", "alert"];
+export function briefSections(brief: Brief, hasWeather: boolean, hide: string[] = []) {
+  const lines = brief.lines
+    .filter((l) => !(l.spokenOnly && hasWeather))
+    .filter((l) => !hide.includes(l.kind ?? "info"))
+    .map((l, i) => ({ l, i }))
+    .sort((a, b) => (RANK.indexOf(a.l.kind ?? "info") + 1 || 99) - (RANK.indexOf(b.l.kind ?? "info") + 1 || 99) || a.i - b.i)
+    .map((x) => x.l);
+  return { top: lines.slice(0, 3), rest: lines.slice(3) };
+}
+
 const hourLabel = (iso: string) => fmtTime(iso).replace(":00", "");
 
 export function BriefCard({
@@ -10,13 +24,16 @@ export function BriefCard({
   weather,
   usingPhone,
   now: nowIso,
+  hideKinds = [],
 }: {
+  hideKinds?: string[];
   brief: Brief;
   weather: WeatherData | null;
   usingPhone: boolean;
   now: string;
 }) {
   const now = weather ? wmo(weather.now.code, weather.now.isDay) : null;
+  const { top, rest } = briefSections(brief, !!weather, hideKinds);
   const sunsetSoon = weather && Date.parse(weather.today.sunset) > Date.parse(nowIso);
   return (
     <section className={`card brief phase-${brief.phase}`}>
@@ -63,15 +80,26 @@ export function BriefCard({
         <SpeakButton text={brief.spoken} />
       </div>
       <ul className="brief-lines">
-        {brief.lines
-          .filter((l) => !(l.spokenOnly && weather))
-          .map((l, i) => (
+        {top.map((l, i) => (
           <li key={i}>
             <span className="bl-icon" aria-hidden>{l.icon}</span>
             <span>{l.text}</span>
           </li>
         ))}
       </ul>
+      {rest.length > 0 && (
+        <details className="brief-more">
+          <summary>{rest.length} more</summary>
+          <ul className="brief-lines">
+            {rest.map((l, i) => (
+              <li key={i}>
+                <span className="bl-icon" aria-hidden>{l.icon}</span>
+                <span>{l.text}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {weather && (
         <div className="brief-foot muted small">
           <LocationButton usingPhone={usingPhone} place={weather.place} />
