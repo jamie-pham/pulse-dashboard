@@ -166,3 +166,7 @@ Data is cached for 3–30 minutes per source. The refresh button bypasses the ca
 - Live traffic or PTV departures for "leave by" times, which currently use fixed minutes from `TRAVEL_*`.
 - Google Health webhooks, so new sleep data arrives the moment it syncs.
 - Hevy and MyFitnessPal cards.
+
+## 10. Lock screen widgets (native iPhone app)
+
+`ios/` is a small native app whose real job is the **lock screen**. A live "leave in…" countdown, what's next, rain and your next deadline all show without unlocking the phone. It reads `GET /api/widget` (Bearer `BRIEF_TOKEN`). Setup on a Mac takes about 15 minutes and works with a free Apple ID; see **[ios/README.md](ios/README.md)**.
