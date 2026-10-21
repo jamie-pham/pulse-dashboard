@@ -28,6 +28,8 @@ export interface WidgetFeed {
   weather: {
     temp: number;
     feels: number;
+    code: number; // WMO weather code — the phone maps it to an SF Symbol
+    isDay: boolean;
     icon: string;
     label: string;
     hi: number;
@@ -47,6 +49,9 @@ export interface WidgetFeed {
 const RANK = ["alert", "sleep", "due", "event", "study", "load", "advice", "body", "countdown", "inbox", "info"];
 const kindOf = (e: TimelineItem): WidgetEvent["kind"] =>
   e.source === "timetable" || /\bCL_|\bCA_|monash/i.test(`${e.location ?? ""}`) ? "class" : e.source === "tanda" || /^work\b|^shift\b/i.test(e.title) ? "shift" : "event";
+
+/** Every time in the feed is UTC ISO-8601 with milliseconds, whatever format the source used. */
+const iso = (s: string) => new Date(s).toISOString();
 
 /** "Assignment 3 [Group | 18%]" → "Assignment 3" — the lock screen has room for about 20 characters. */
 export function shortTitle(s: string): string {
@@ -68,8 +73,8 @@ export function buildWidget(d: DashboardData, now = new Date()): WidgetFeed {
       return {
         id: e.id,
         title: shortTitle(e.title),
-        start: e.start,
-        end: e.end,
+        start: iso(e.start),
+        end: iso(e.end),
         leaveAt: mins ? new Date(Date.parse(e.start) - mins * 60e3).toISOString() : null,
         where: e.source === "timetable" ? cfg.campus.label : (e.location?.split(",")[0] ?? null),
         kind: kindOf(e),
@@ -91,11 +96,13 @@ export function buildWidget(d: DashboardData, now = new Date()): WidgetFeed {
       ? {
           temp: Math.round(w.now.temp),
           feels: Math.round(w.now.feels),
+          code: w.now.code,
+          isDay: w.now.isDay,
           icon: wmo(w.now.code, w.now.isDay).icon,
           label: wmo(w.now.code, w.now.isDay).label,
           hi: Math.round(w.today.max),
           lo: Math.round(w.today.min),
-          rainAt: isWet(w.now.code) ? now.toISOString() : (wet?.time ?? null),
+          rainAt: isWet(w.now.code) ? now.toISOString() : wet ? iso(wet.time) : null,
           rainPop: isWet(w.now.code) ? 100 : (wet?.pop ?? null),
           tip: tip ? `${tip.icon} ${tip.text}` : null,
         }
@@ -105,9 +112,9 @@ export function buildWidget(d: DashboardData, now = new Date()): WidgetFeed {
     due: d.due
       .filter((x) => Date.parse(x.due) > +now)
       .slice(0, 3)
-      .map((x) => ({ title: shortTitle(x.title), due: x.due, course: x.course ?? null, weight: weightOf(x.title) })),
+      .map((x) => ({ title: shortTitle(x.title), due: iso(x.due), course: x.course ?? null, weight: weightOf(x.title) })),
     study: d.workload.blocks[0]
-      ? { title: shortTitle(d.workload.blocks[0].task.title), start: d.workload.blocks[0].start, end: d.workload.blocks[0].end }
+      ? { title: shortTitle(d.workload.blocks[0].task.title), start: iso(d.workload.blocks[0].start), end: iso(d.workload.blocks[0].end) }
       : null,
     alert: alert ? { title: alert.title, detail: alert.detail, distanceKm: Math.round(alert.distanceKm) } : null,
     lines: d.brief.lines

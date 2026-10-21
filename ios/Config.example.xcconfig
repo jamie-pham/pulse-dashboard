@@ -1,0 +1,14 @@
+// Copy to Config.xcconfig (git-ignored) and fill in. Then run `xcodegen`.
+// Note: `//` starts a comment in .xcconfig, so the host goes in without https://
+
+// Your Vercel host, no https:// and no trailing slash
+PULSE_HOST = pulse-dashboard-heii.vercel.app
+
+// Same value as BRIEF_TOKEN in Vercel → Settings → Environment Variables
+PULSE_TOKEN =
+
+// Reverse-domain prefix for the app's bundle IDs — anything unique to you
+BUNDLE_PREFIX = com.jamiepham
+
+// Your Apple team ID: Xcode → Settings → Accounts → (your Apple ID) → Team. Free "Personal Team" works.
+DEVELOPMENT_TEAM =

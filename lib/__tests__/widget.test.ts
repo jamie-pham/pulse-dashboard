@@ -38,3 +38,11 @@ test("no 'leave by' between back-to-back campus classes", async () => {
   assert.equal(travelFrom(b, [a, b, gym]), 0);
   assert.equal(travelFrom(gym, [a, b, gym]), 30);
 });
+
+test("every time in the feed is UTC ISO with milliseconds (the Swift decoder relies on it)", () => {
+  const now = localTime(today, "07:05");
+  const f = buildWidget(demoData(now), now);
+  const isoRe = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
+  const times = [f.generatedAt, ...f.events.flatMap((e) => [e.start, e.end, e.leaveAt]), ...f.due.map((d) => d.due), f.weather?.rainAt, f.study?.start, f.study?.end].filter(Boolean) as string[];
+  for (const t of times) assert.match(t, isoRe);
+});

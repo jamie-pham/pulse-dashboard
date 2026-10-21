@@ -6,3 +6,10 @@ node_modules
 next-env.d.ts
 *.tsbuildinfo
 .vercel
+
+# iOS (generated / secrets)
+ios/Config.xcconfig
+ios/*.xcodeproj
+ios/build/
+ios/DerivedData/
+xcuserdata/

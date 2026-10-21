@@ -1,0 +1,20 @@
+# Compiles the iOS app on a GitHub-hosted Mac (no signing) so broken Swift never reaches your phone.
+name: iOS build
+on:
+  push:
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Build for simulator
+        working-directory: ios
+        run: |
+          cp Config.example.xcconfig Config.xcconfig
+          xcodegen
+          xcodebuild -project Pulse.xcodeproj -scheme Pulse -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug CODE_SIGNING_ALLOWED=NO build -quiet
