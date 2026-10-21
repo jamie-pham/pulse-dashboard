@@ -77,7 +77,8 @@ export function relDue(iso: string, now = new Date()): { label: string; urgency:
   const dueDay = ymd(due);
   const days = Math.round((Date.parse(dueDay) - Date.parse(today)) / 86400000);
   if (due.getTime() < now.getTime()) {
-    return { label: days === 0 ? `overdue ${fmtTime(due)}` : `${-days}d overdue`, urgency: "overdue" };
+    const hoursLate = (now.getTime() - due.getTime()) / 3600e3;
+    return { label: days === 0 || hoursLate < 24 ? `overdue · ${fmtTime(due)}` : `${-days}d overdue`, urgency: "overdue" };
   }
   if (days === 0) return { label: `today ${fmtTime(due)}`, urgency: "today" };
   if (days === 1) return { label: `tomorrow ${fmtTime(due)}`, urgency: "soon" };
