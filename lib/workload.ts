@@ -52,8 +52,11 @@ export function isDeadlineEcho(e: TimelineItem, due: DueItem[]): boolean {
   if (e.source !== "calendar" || e.allDay) return false;
   const et = norm(e.title);
   if (et.length < 2) return false;
+  const short = Date.parse(e.end) - Date.parse(e.start) <= 20 * 60e3;
   return due.some((d) => {
-    if (Math.abs(Date.parse(d.due) - Date.parse(e.start)) > 3 * 3600e3) return false;
+    const gap = Math.abs(Date.parse(d.due) - Date.parse(e.start));
+    // Same deadline: within 3h of it, or a short reminder block for it any time in the fortnight around it.
+    if (gap > 3 * 3600e3 && !(short && gap < 14 * 86400e3)) return false;
     const dt = norm(d.title);
     if (dt.length < 2) return false;
     const [a, b] = et.length <= dt.length ? [et, dt] : [dt, et];

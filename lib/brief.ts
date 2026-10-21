@@ -198,7 +198,7 @@ export function buildBrief(d: Input, now = new Date()): Brief {
     lines.push(...studyLines(d, today, now));
     lines.push(...countdownLines(d));
     lines.push(...alertLines(d));
-    if (phase === "morning" && d.inbox?.unread) lines.push({ icon: "✉️", kind: "inbox", text: `${d.inbox.unread} unread email${d.inbox.unread === 1 ? "" : "s"}.` });
+    if (phase === "morning" && d.inbox?.unread) lines.push({ icon: "✉️", kind: "inbox", text: `${d.inbox.unread} new email${d.inbox.unread === 1 ? "" : "s"} this week.` });
   } else {
     const smallHours = phase === "night" && hour < 4;
     const nextDay = smallHours ? today : tomorrow;

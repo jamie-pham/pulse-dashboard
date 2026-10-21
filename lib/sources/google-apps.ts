@@ -48,17 +48,15 @@ export async function getCalendar(from: Date, to: Date, slot: Slot = PRIMARY, la
 }
 
 export async function getInbox(slot: Slot = PRIMARY, email?: string): Promise<InboxData> {
-  const [label, list] = await Promise.all([
-    gjson("https://gmail.googleapis.com/gmail/v1/users/me/labels/INBOX", {}, slot),
-    gjson(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=4&q=${encodeURIComponent("is:unread in:inbox category:primary")}`,
-      {},
-      slot,
-    ),
-  ]);
+  // A raw unread count (often thousands) can't be read at a glance — count only unread Primary mail from the last week.
+  const list = await gjson(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent("is:unread in:inbox category:primary newer_than:7d")}`,
+    {},
+    slot,
+  );
   const who = email ?? "0";
   const messages = await Promise.all(
-    (list.messages ?? []).map(async (m: any) => {
+    (list.messages ?? []).slice(0, 4).map(async (m: any) => {
       const full = await gjson(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From`,
         {},
@@ -74,7 +72,7 @@ export async function getInbox(slot: Slot = PRIMARY, email?: string): Promise<In
       };
     }),
   );
-  const unread = label.messagesUnread ?? messages.length;
+  const unread = (list.messages ?? []).length >= 50 ? Math.max(50, list.resultSizeEstimate ?? 50) : (list.messages ?? []).length;
   return { unread, messages, accounts: [{ email: email ?? "Gmail", unread }] };
 }
 

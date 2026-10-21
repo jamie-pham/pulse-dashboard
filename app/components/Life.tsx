@@ -107,7 +107,7 @@ export function InboxCard({ inbox }: { inbox: InboxData }) {
       <div className="card-head">
         <h3>Inbox</h3>
         <a className="muted small" href="https://mail.google.com" target="_blank" rel="noreferrer">
-          {inbox.unread} unread →
+          {inbox.unread} new this week →
         </a>
       </div>
       {multi && (
@@ -120,7 +120,7 @@ export function InboxCard({ inbox }: { inbox: InboxData }) {
         </div>
       )}
       {inbox.messages.length === 0 ? (
-        <p className="muted">Inbox zero in Primary.</p>
+        <p className="muted">Nothing new in Primary this week.</p>
       ) : (
         <ul className="list">
           {inbox.messages.map((m) => (

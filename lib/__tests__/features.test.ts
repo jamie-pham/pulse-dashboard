@@ -175,3 +175,14 @@ test("brief includes a study window and the demo renders every new section", () 
   assert.ok(d.brief.lines.some((l) => l.kind === "study"), JSON.stringify(d.brief.lines.map((l) => l.text)));
   assert.ok(d.routine.streak.days >= 1);
 });
+
+test("real-data fixes: reminder blocks, room codes, work shifts", async () => {
+  const { travelFor } = await import("../travel");
+  // a 10-min Friday reminder for a deadline Moodle lists on Monday is still a copy, not a commitment
+  const d = [due("r", "Reflection W12 [Individual | 0.4%]", addDays(today, 4))];
+  assert.ok(isDeadlineEcho(ev("e", "FIT1049 Reflection W12 [0.4%]", today, "23:45", "23:55"), d));
+  // a real 1-hour meeting with a similar name is not
+  assert.ok(!isDeadlineEcho(ev("e2", "Reflection W12 planning", today, "13:00", "14:00"), d));
+  assert.equal(travelFor(ev("c", "IT PROF PRAC, Applied", today, "10:00", "12:00", "calendar", "CL_Anc-19.LTB_132")), 60);
+  assert.equal(travelFor(ev("w", "Work @ Cafe Clean / Cleaning", today, "09:30", "14:15", "calendar", "SuperPark Highpoint")), 30);
+});

@@ -99,6 +99,9 @@ export async function buildDashboard(force = false, at?: string): Promise<Dashbo
   const seen = new Set<string>();
   const dueAll: DueItem[] = [...(moodle ?? []), ...(ed?.due ?? []), ...(ontrack ?? []), ...(notion ?? [])]
     .filter((d) => Date.parse(d.due) > +now - 3 * 86400e3)
+    // Moodle's feed can't tell us you've submitted, so once a Moodle item is 12h past due it's either done or gone.
+    .filter((d) => d.source !== "moodle" || Date.parse(d.due) > +now - 12 * 3600e3)
+    .filter((d) => !(d.source === "moodle" && (d.course === "Site" || /maintenance|outage|downtime/i.test(d.title))))
     .filter((d) => {
       const k = `${d.title.toLowerCase().slice(0, 30)}|${d.due.slice(0, 10)}`;
       if (seen.has(k)) return false;
