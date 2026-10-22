@@ -53,6 +53,10 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+/* Safety net: nothing on any phone width should make the page scroll sideways (scrollers like the hourly strip still scroll inside themselves). */
+html, body { overflow-x: clip; }
+.card, .col, .grid > * { min-width: 0; }
+.li-title, .now-big, .now-sub, .brief-lines li { overflow-wrap: anywhere; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   font-size: 15px;
@@ -75,9 +79,11 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 
 .top { display: flex; justify-content: space-between; align-items: flex-end; margin: 6px 2px 16px; }
 .date { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.top h1 { font-size: 26px; font-weight: 700; margin-top: 2px; }
+.top { gap: 10px; }
+.top h1 { font-size: clamp(22px, 7vw, 26px); font-weight: 700; margin-top: 2px; }
 
 .refresh {
+  flex: none; white-space: nowrap;
   display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line);
   color: var(--text); border-radius: 999px; padding: 8px 12px; font: inherit; cursor: pointer;
 }
@@ -290,8 +296,9 @@ input[type="password"] { background: var(--card2); border: 1px solid var(--line)
 .now-alert .now-kicker { color: var(--red); }
 .now-big { font-size: 28px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; margin-top: 4px; overflow-wrap: anywhere; }
 .now-sub { font-size: 15px; color: var(--text2); margin-top: 4px; }
-.now-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.chip { font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--card2); color: var(--text); white-space: nowrap; }
+.now-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; min-width: 0; }
+/* Chips stay on one line but never wider than the card: long Moodle titles end in "…" instead of pushing the page sideways. */
+.chip { font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--card2); color: var(--text); white-space: nowrap; max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .chip.warn { color: var(--strain); }
 
 /* Brief: three lines, the rest one tap away */

@@ -122,7 +122,7 @@ export function demoData(now = new Date()): DashboardData {
   };
 
   const demoDue: DueItem[] = [
-    { id: "d1", title: "P6 · Linked lists", due: due(1, "23:59"), source: "ontrack", course: "FIT1008", status: "working on it" },
+    { id: "d1", title: "Assignment 2: Week 12 In-class Demo (Subject to Approval by Your Tutor)", due: due(1, "23:59"), source: "moodle", course: "FIT1047", status: "working on it" },
     { id: "d2", title: "Quiz W11 [Individual | 0.6%]", due: due(1, "23:55"), source: "moodle", course: "FIT1049" },
     { id: "d3", title: "Assignment 2 — Block cipher modes (15%)", due: due(4, "23:55"), source: "moodle", course: "FIT1093" },
     { id: "d4", title: "Assignment 3 [Group | 18%]", due: due(4, "23:55"), source: "moodle", course: "FIT1049" },
